@@ -29,7 +29,7 @@ export default function Home() {
           For a truly one hundred percent boss...
         </h2>
         <h2 className='text-3xl font-medium text-slate-500 mb-6'>
-          it's just an <span className='font-semibold'>if</span>
+          it&rsquo;s just an <span className='font-semibold'>if</span>
         </h2>
         <button
           onClick={CreateRetro}

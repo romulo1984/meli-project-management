@@ -9,7 +9,7 @@ export default function Navbar() {
       <h1 className='text-2xl font-thin text-slate-600'>
         <a href='/'>#time-do-fernando</a>
       </h1>
-      {isSignedIn ? <UserButton /> : <SignInButton mode='modal' />}
+      {isSignedIn ? <UserButton /> : <SignInButton redirectUrl='https://meli.romin.com.br' mode='modal' />}
     </nav>
   )
 }

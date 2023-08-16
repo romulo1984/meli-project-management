@@ -1,19 +1,22 @@
 'use client'
+import { useState } from 'react'
 import Lottie from 'react-lottie-player'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/clerk-react'
 import { useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
-import { Id } from '@convex/_generated/dataModel'
 
 import lootieAnimation from '../animations/animation.json'
+import Button from '@/components/button'
 
 export default function Home() {
+  const [creatingRetro, setCreatingRetro] = useState(false)
   const { isSignedIn, user } = useUser()
   const router = useRouter()
   const StoreRetro = useMutation(api.retros.store)
 
   const CreateRetro = async () => {
+    setCreatingRetro(true)
     if (!isSignedIn) {
       router.push('/login')
     } else {
@@ -31,11 +34,9 @@ export default function Home() {
         <h2 className='text-3xl font-medium text-slate-500 mb-6'>
           it&rsquo;s just an <span className='font-semibold'>if</span>
         </h2>
-        <button
-          onClick={CreateRetro}
-          className='text-slate-100 font-medium rounded-3xl px-8 py-3 bg-slate-800'>
+        <Button disabled={creatingRetro} handleClick={CreateRetro}>
           Create a new Retro
-        </button>
+        </Button>
       </div>
       <div className='w-full'>
         <Lottie loop animationData={lootieAnimation} play style={{ height: 800 }}/>

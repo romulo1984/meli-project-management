@@ -15,7 +15,7 @@ export default function Home() {
 
   const CreateRetro = async () => {
     if (!isSignedIn) {
-      router.push('/login?redirect_url="https://meli.romin.com.br"')
+      router.push('/login')
     } else {
       const retroId = await StoreRetro({ ownerId: user.id })
       router.push(`/retro/${retroId}`)

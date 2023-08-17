@@ -6,8 +6,8 @@ import Navbar from '@/components/navbar'
 const roboto = Roboto({ subsets: ['latin'], weight: ['100', '400', '900'] })
 
 export const metadata: Metadata = {
-  title: 'Meli Project Management',
-  description: 'Retrônomo',
+  title: 'Retrônomo',
+  description: 'Create and manage retrospectives for your team.',
 }
 
 interface LayoutProps { children: React.ReactNode }

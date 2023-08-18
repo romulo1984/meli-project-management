@@ -18,10 +18,11 @@ export default function Retro(props: RetroProps) {
   const CreateNote = useMutation(api.notes.store)
 
   const getUser = (id: string) => users?.find((user) => user?._id === id)
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (retro && users?.length) {
-      CreateNote({ body: note, pipeline: 'good', retroId: retro?._id, userId: users[0]._id })
+    const firstUser = users?.[0]
+    if (retro && firstUser) {
+      CreateNote({ body: note, pipeline: 'good', retroId: retro?._id, userId: firstUser._id })
     }
     setNote('')
   }

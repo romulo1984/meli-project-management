@@ -2,8 +2,8 @@
 export default {
   providers: [
     {
-      domain: 'https://full-impala-69.clerk.accounts.dev',
-      applicationID: 'meli-pm',
+      domain: process.env.CLERK_JWT_ISSUER_DOMAIN,
+      applicationID: 'convex',
     },
   ]
 }

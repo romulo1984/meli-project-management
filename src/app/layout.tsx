@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Roboto } from 'next/font/google'
 import ConvexClientProvider from '../contexts/ConvexClientProvider'
 import Navbar from '@/components/navbar'
+import { InitUser } from '@/helpers/InitUser'
 const roboto = Roboto({ subsets: ['latin'], weight: ['100', '400', '900'] })
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: LayoutProps) {
       <body className={roboto.className}>
         <ConvexClientProvider>
           <Navbar />
+          <InitUser />
           {children}
         </ConvexClientProvider>
       </body>

@@ -12,10 +12,25 @@ export const get = query({
 export const store = mutation({
   args: { ownerId: v.string() },
   handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_token', (q) =>
+        q.eq('tokenIdentifier', args.ownerId)
+      )
+      .unique()
+
     const payload = {
       name: `Retrô ${new Date().toDateString()}`,
-      ownerId: args.ownerId,
+      ownerId: user?._id!,
     }
-    return await ctx.db.insert('retros', payload)
+
+    const retroId = await ctx.db.insert('retros', payload)
+
+    await ctx.db.insert('users_retro', {
+      retroId: retroId,
+      userId: user?._id!,
+    })
+
+    return retroId
   }
 })

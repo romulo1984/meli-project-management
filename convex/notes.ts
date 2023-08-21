@@ -21,3 +21,12 @@ export const store = mutation({
     return noteId
   }
 })
+
+export const remove = mutation({
+  args: { id: v.id('notes') },
+  handler: async (ctx, args) => {
+    const note = await ctx.db.get(args.id)
+    if (note) await ctx.db.delete(note._id)
+    return note
+  }
+})

@@ -37,7 +37,7 @@ export default function NoteForm (props: NoteFormProps) {
                 type='submit'
                 className='bg-indigo-600 hover:bg-indigo-700 py-2 px-6 mb-2 rounded-lg text-center self-end'
               >
-                <span className='font-normal text-white'>Write note</span>
+                <span className='font-normal text-white'>Save note</span>
               </button>
             </div>
           </>

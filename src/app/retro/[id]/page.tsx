@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import useRetro from '@/helpers/hooks/useRetro'
 import { Id } from '@convex/_generated/dataModel'
 import { useMutation } from 'convex/react'
@@ -9,6 +9,7 @@ import NoteForm from '@/components/note-form'
 import { useUser } from '@clerk/clerk-react'
 import NotLoggedAlert from '@/components/not-logged-alert'
 import Participants from '@/components/participants'
+import { useJoinRetro } from '@/helpers/hooks/useJoinRetro'
 
 interface RetroProps {
   params: {
@@ -25,12 +26,14 @@ export default function Retro(props: RetroProps) {
   const CreateNote = useMutation(api.notes.store)
   const RemoveNote = useMutation(api.notes.remove)
   const { isSignedIn } = useUser()
+  useJoinRetro({ retroId })
 
   const getUser = (id: string) => users?.find((user) => user?._id === id)
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
       CreateNote({ body: note, pipeline, retroId: retro?._id, userId: me._id })
+      setOpened({ good: false, bad: false, action: false })
     }
     setNote('')
   }

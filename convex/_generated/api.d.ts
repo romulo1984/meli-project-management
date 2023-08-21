@@ -17,6 +17,7 @@ import type {
 import type * as notes from "../notes";
 import type * as retros from "../retros";
 import type * as users from "../users";
+import type * as users_retro from "../users_retro";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   notes: typeof notes;
   retros: typeof retros;
   users: typeof users;
+  users_retro: typeof users_retro;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

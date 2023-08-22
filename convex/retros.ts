@@ -34,3 +34,14 @@ export const store = mutation({
     return retroId
   }
 })
+
+export const update = mutation({
+  args: { id: v.id('retros'), name: v.string() },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { name: args.name })
+    }
+  }
+})

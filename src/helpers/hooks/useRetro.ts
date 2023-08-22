@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useQuery } from 'convex/react'
 import { useUser } from '@clerk/clerk-react'
 import { api } from '@convex/_generated/api'
@@ -9,6 +10,7 @@ interface useRetroProps {
 
 const useRetro = (props: useRetroProps) => {
   const { retroId } = props
+  const [isLoading, setIsLoading] = useState(true)
   const { user } = useUser()
 
   const retro = useQuery(api.retros.get, { id: retroId })
@@ -17,7 +19,14 @@ const useRetro = (props: useRetroProps) => {
 
   const me = users?.find((u) => u?.tokenIdentifier === user?.id)
 
+  useEffect(() => {
+    if (retro && notes && users) {
+      setIsLoading(false)
+    }
+  }, [retro, notes, users])
+
   return {
+    isLoading,
     retro,
     notes,
     users,

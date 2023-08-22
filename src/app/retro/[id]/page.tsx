@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import useRetro from '@/helpers/hooks/useRetro'
 import { Id } from '@convex/_generated/dataModel'
 import { useMutation } from 'convex/react'
@@ -10,6 +10,8 @@ import { useUser } from '@clerk/clerk-react'
 import NotLoggedAlert from '@/components/not-logged-alert'
 import Participants from '@/components/participants'
 import { useJoinRetro } from '@/helpers/hooks/useJoinRetro'
+import Loading from '@/components/loading'
+import InlineEditName from '@/components/inline-edit-name'
 
 interface RetroProps {
   params: {
@@ -22,7 +24,7 @@ export default function Retro(props: RetroProps) {
   const [note, setNote] = useState('')
   const [pipeline, setPipeline] = useState<'good' | 'bad' | 'action'>('good')
   const [opened, setOpened] = useState({ bad: false, good: false, action: false })
-  const {retro, notes, users, me} = useRetro({ retroId })
+  const { isLoading, retro, notes, users, me } = useRetro({ retroId })
   const CreateNote = useMutation(api.notes.store)
   const RemoveNote = useMutation(api.notes.remove)
   const { isSignedIn } = useUser()
@@ -49,85 +51,89 @@ export default function Retro(props: RetroProps) {
 
   return (
     <main className='container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col'>
-      <div className='flex justify-between items-center mb-8'>
-        <h2 className='text-xl text-zinc-600'>{retro?.name}</h2>
-        <Participants users={users} />
-      </div>
-      {!isSignedIn && <NotLoggedAlert />}
-      <div className='flex gap-6'>
-        <div className='w-full bg-zinc-100 rounded-lg p-4'>
-          <div className='flex justify-between'>
-            <h3 className='text-lg text-zinc-500 mb-4'>Good</h3>
-            <p className='text-zinc-400'>
-              {goodNotes?.length}
-            </p>
+      {isLoading ? <Loading /> : (
+        <>
+          <div className='flex justify-between items-center mb-8'>
+            <InlineEditName retroId={retro?._id} value={retro?.name} />
+            <Participants users={users} />
           </div>
-          {isSignedIn && <NoteForm
-            opened={opened.good}
-            toggleOpened={() => toggleOpened('good')}
-            newNote={note}
-            setNewNote={setNote}
-            saveHandler={handleSubmit}
-          />}
-          {goodNotes?.map((note) => (
-            <Note
-              key={note._id}
-              note={note}
-              user={getUser(note.userId)}
-              me={me}
-              removeHandler={() => RemoveNote({ id: note._id })}
-            />
-          ))}
-        </div>
-        <div className='w-full bg-zinc-100 rounded-lg p-4'>
-          <div className='flex justify-between'>
-            <h3 className='text-lg text-zinc-500 mb-4'>Bad</h3>
-            <p className='text-zinc-400'>
-              {badNotes?.length}
-            </p>
+          {!isSignedIn && <NotLoggedAlert />}
+          <div className='flex gap-6'>
+            <div className='w-full bg-zinc-100 rounded-lg p-4'>
+              <div className='flex justify-between'>
+                <h3 className='text-lg text-zinc-500 mb-4'>Good</h3>
+                <p className='text-zinc-400'>
+                  {goodNotes?.length}
+                </p>
+              </div>
+              {isSignedIn && <NoteForm
+                opened={opened.good}
+                toggleOpened={() => toggleOpened('good')}
+                newNote={note}
+                setNewNote={setNote}
+                saveHandler={handleSubmit}
+              />}
+              {goodNotes?.map((note) => (
+                <Note
+                  key={note._id}
+                  note={note}
+                  user={getUser(note.userId)}
+                  me={me}
+                  removeHandler={() => RemoveNote({ id: note._id })}
+                />
+              ))}
+            </div>
+            <div className='w-full bg-zinc-100 rounded-lg p-4'>
+              <div className='flex justify-between'>
+                <h3 className='text-lg text-zinc-500 mb-4'>Bad</h3>
+                <p className='text-zinc-400'>
+                  {badNotes?.length}
+                </p>
+              </div>
+              {isSignedIn && <NoteForm
+                opened={opened.bad}
+                toggleOpened={() => toggleOpened('bad')}
+                newNote={note}
+                setNewNote={setNote}
+                saveHandler={handleSubmit}
+              />}
+              {badNotes?.map((note) => (
+                <Note
+                  key={note._id}
+                  note={note} 
+                  user={getUser(note.userId)}
+                  me={me}
+                  removeHandler={() => RemoveNote({ id: note._id })}
+                />
+              ))}
+            </div>
+            <div className='w-full bg-zinc-100 rounded-lg p-4'>
+              <div className='flex justify-between'>
+                <h3 className='text-lg text-zinc-500 mb-4'>Actions</h3>
+                <p className='text-zinc-400'>
+                  {actionNotes?.length}
+                </p>
+              </div>
+              {isSignedIn && <NoteForm
+                opened={opened.action}
+                toggleOpened={() => toggleOpened('action')}
+                newNote={note}
+                setNewNote={setNote}
+                saveHandler={handleSubmit}
+              />}
+              {actionNotes?.map((note) => (
+                <Note
+                  key={note._id}
+                  note={note} 
+                  user={getUser(note.userId)}
+                  me={me}
+                  removeHandler={() => RemoveNote({ id: note._id })}
+                />
+              ))}
+            </div>
           </div>
-          {isSignedIn && <NoteForm
-            opened={opened.bad}
-            toggleOpened={() => toggleOpened('bad')}
-            newNote={note}
-            setNewNote={setNote}
-            saveHandler={handleSubmit}
-          />}
-          {badNotes?.map((note) => (
-            <Note
-              key={note._id}
-              note={note} 
-              user={getUser(note.userId)}
-              me={me}
-              removeHandler={() => RemoveNote({ id: note._id })}
-            />
-          ))}
-        </div>
-        <div className='w-full bg-zinc-100 rounded-lg p-4'>
-          <div className='flex justify-between'>
-            <h3 className='text-lg text-zinc-500 mb-4'>Actions</h3>
-            <p className='text-zinc-400'>
-              {actionNotes?.length}
-            </p>
-          </div>
-          {isSignedIn && <NoteForm
-            opened={opened.action}
-            toggleOpened={() => toggleOpened('action')}
-            newNote={note}
-            setNewNote={setNote}
-            saveHandler={handleSubmit}
-          />}
-          {actionNotes?.map((note) => (
-            <Note
-              key={note._id}
-              note={note} 
-              user={getUser(note.userId)}
-              me={me}
-              removeHandler={() => RemoveNote({ id: note._id })}
-            />
-          ))}
-        </div>
-      </div>
+        </>
+      )}
     </main>
   )
 }

@@ -10,13 +10,20 @@ export const getRetroNotes = query({
 })
 
 export const store = mutation({
-  args: { body: v.string(), pipeline: v.string(), userId: v.id('users'), retroId: v.id('retros') },
+  args: {
+    body: v.string(),
+    pipeline: v.string(),
+    userId: v.id('users'),
+    retroId: v.id('retros'),
+    anonymous: v.optional(v.boolean()),
+  },
   handler: async (ctx, args) => {
     const noteId = await ctx.db.insert('notes', {
       body: args.body,
       pipeline: args.pipeline,
       userId: args.userId,
       retroId: args.retroId,
+      anonymous: args.anonymous || false,
     })
     return noteId
   }

@@ -12,6 +12,7 @@ export default defineSchema({
     pipeline: v.string(),
     userId: v.id('users'),
     retroId: v.id('retros'),
+    anonymous: v.optional(v.boolean()),
   }),
   retros: defineTable({
     name: v.string(),

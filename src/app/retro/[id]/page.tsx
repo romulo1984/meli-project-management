@@ -21,7 +21,7 @@ interface RetroProps {
 
 export default function Retro(props: RetroProps) {
   const retroId = props.params.id
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState({ body: '', anonymous: false })
   const [pipeline, setPipeline] = useState<'good' | 'bad' | 'action'>('good')
   const [opened, setOpened] = useState({ bad: false, good: false, action: false })
   const { isLoading, retro, notes, users, me } = useRetro({ retroId })
@@ -34,10 +34,10 @@ export default function Retro(props: RetroProps) {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
-      CreateNote({ body: note, pipeline, retroId: retro?._id, userId: me._id })
+      CreateNote({ body: note.body, pipeline, retroId: retro?._id, userId: me._id, anonymous: note.anonymous })
       setOpened({ good: false, bad: false, action: false })
     }
-    setNote('')
+    setNote({ body: '', anonymous: false })
   }
 
   const toggleOpened = (pipeline: 'good' | 'bad' | 'action') => {

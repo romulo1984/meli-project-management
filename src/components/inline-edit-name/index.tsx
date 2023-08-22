@@ -30,11 +30,11 @@ export default function InlineEditName (props: InlineEditNameProps) {
   }, [newName, retroId, value, UpdateRetro])
 
   return (
-    <div>
+    <div className='w-full'>
       <input
         onChange={handleInputChange}
         value={newName}
-        className='text-xl text-zinc-600' type='text'
+        className='text-xl text-zinc-600 w-full' type='text'
       />
     </div>
   )

@@ -17,6 +17,9 @@ export default defineSchema({
   retros: defineTable({
     name: v.string(),
     ownerId: v.id('users'),
+    time: v.optional(v.number()),
+    startTime: v.optional(v.number()),
+    timeStatus: v.optional(v.string()),
   }),
   users_retro: defineTable({
     userId: v.id('users'),

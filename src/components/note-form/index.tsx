@@ -24,6 +24,11 @@ export default function NoteForm (props: NoteFormProps) {
     saveHandler(e)
   }
 
+  const transcript = () => {
+    setNewNote?.({ ...newNote, body: '' })
+    startRecognition()
+  }
+
   useEffect(() => {
     if (text !== '') {
       setNewNote?.({ ...newNote, body: text })
@@ -66,7 +71,7 @@ export default function NoteForm (props: NoteFormProps) {
                 </button>
                 <button
                   disabled={recognizing}
-                  onClick={startRecognition}
+                  onClick={transcript}
                   type='button'
                   className='bg-zinc-200 hover:bg-zinc-300 py-2 px-4 rounded-full text-center mr-2'
                 >

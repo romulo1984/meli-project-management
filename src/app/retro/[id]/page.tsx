@@ -54,7 +54,11 @@ export default function Retro(props: RetroProps) {
       {isLoading ? <Loading /> : (
         <>
           <div className='flex justify-between items-center mb-8'>
-            <InlineEditName retroId={retro?._id} value={retro?.name} />
+            <InlineEditName
+              disabled={retro?.ownerId !== me?._id}
+              retroId={retro?._id}
+              value={retro?.name}
+            />
             <Participants users={users} />
           </div>
           {!isSignedIn && <NotLoggedAlert />}

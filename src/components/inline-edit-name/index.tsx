@@ -39,13 +39,13 @@ export default function InlineEditName (props: InlineEditNameProps) {
   }, [editable, value])
 
   return (
-    <div className='w-full'>
+    <div className='w-auto'>
       <input
         disabled={disabled || false}
         onClick={() => setEditable(true)}
         onChange={handleInputChange}
         value={newName}
-        className='disabled:bg-white text-xl text-zinc-600 w-full' type='text'
+        className='disabled:bg-white text-xl text-zinc-600 w-full outline-none' type='text'
       />
     </div>
   )

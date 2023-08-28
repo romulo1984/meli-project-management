@@ -8,7 +8,7 @@ export default function Retros() {
   const { retros, isLoading, me } = useMyRetros()
 
   const isOwner = (retro: Doc<'retros'> | null) => retro?.ownerId === me?._id
-  const formatDate = (date: any) => (new Date(date)).toLocaleDateString('pt-BR', {
+  const formatDate = (date: any) => (new Date(date)).toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',

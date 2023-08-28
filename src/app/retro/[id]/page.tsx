@@ -49,16 +49,28 @@ export default function Retro(props: RetroProps) {
   const goodNotes = notes?.filter((note) => note.pipeline === 'good')
   const actionNotes = notes?.filter((note) => note.pipeline === 'action')
 
+  const formatDate = (date: any) => (new Date(date)).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+
   return (
     <main className='container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col'>
       {isLoading ? <Loading /> : (
         <>
           <div className='flex justify-between items-center mb-8'>
-            <InlineEditName
-              disabled={retro?.ownerId !== me?._id}
-              retroId={retro?._id}
-              value={retro?.name}
-            />
+            <div className='flex flex-col w-full'>
+              <InlineEditName
+                disabled={retro?.ownerId !== me?._id}
+                retroId={retro?._id}
+                value={retro?.name}
+              />
+              <p className='text-sm text-zinc-400'>
+                Created in {formatDate(retro?._creationTime)}
+              </p>
+            </div>
             <Participants users={users} />
           </div>
           {!isSignedIn && <NotLoggedAlert />}

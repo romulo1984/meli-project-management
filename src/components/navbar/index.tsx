@@ -1,5 +1,6 @@
 'use client'
 import { useUser, SignInButton, UserButton } from '@clerk/clerk-react'
+import Link from 'next/link'
 
 export default function Navbar() {
   const { isSignedIn } = useUser()
@@ -9,7 +10,14 @@ export default function Navbar() {
       <h1 className='text-2xl font-thin text-slate-600'>
         <a href='/'>#time-do-fernando</a>
       </h1>
-      {isSignedIn ? <UserButton /> : <SignInButton mode='modal' />}
+      <div className='flex justify-end items-center'>
+        {isSignedIn ? (
+          <>
+            <Link className='mr-6' href='/retros'>My Retros</Link>
+            <UserButton />
+          </>
+        ) : <SignInButton mode='modal' />}
+      </div>
     </nav>
   )
 }

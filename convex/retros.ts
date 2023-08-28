@@ -9,6 +9,22 @@ export const get = query({
     .unique()
 })
 
+export const myRetros = query({
+  args: { userId: v.id('users') },
+  handler: async (ctx, args) => {
+    const usersRetro = await ctx.db
+      .query('users_retro')
+      .withIndex('by_user_id', (q) =>
+        q.eq('userId', args.userId)
+      )
+      .collect()
+
+      return Promise.all(usersRetro.map((userRetro) => {
+        return ctx.db.get(userRetro.retroId)
+      }))
+  }
+})
+
 export const store = mutation({
   args: { ownerId: v.string() },
   handler: async (ctx, args) => {

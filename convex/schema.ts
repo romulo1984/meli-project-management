@@ -20,9 +20,11 @@ export default defineSchema({
     time: v.optional(v.number()),
     startTime: v.optional(v.number()),
     timeStatus: v.optional(v.string()),
-  }),
+  }).index('by_owner_id', ['ownerId']),
   users_retro: defineTable({
     userId: v.id('users'),
     retroId: v.id('retros'),
-  }).index('by_retro_id', ['retroId']),
+  })
+  .index('by_retro_id', ['retroId'])
+  .index('by_user_id', ['userId'])
 })

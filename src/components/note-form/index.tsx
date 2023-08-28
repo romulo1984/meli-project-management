@@ -1,4 +1,4 @@
-import CapitalibeFirstLetter from '@/helpers/commons'
+import CapitalizeFirstLetter from '@/helpers/commons'
 import './styles.scss'
 import useVoiceToText from '@/helpers/voiceToText'
 import { useEffect } from 'react'
@@ -32,7 +32,7 @@ export default function NoteForm (props: NoteFormProps) {
 
   useEffect(() => {
     if (text !== '') {
-      setNewNote?.({ ...newNote, body: CapitalibeFirstLetter(text) })
+      setNewNote?.({ ...newNote, body: CapitalizeFirstLetter(text) })
     }
   }, [text])
 

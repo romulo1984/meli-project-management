@@ -22,6 +22,16 @@ export const get = query({
   handler: async (ctx, args) => ctx.db.get(args.id)
 })
 
+export const getByToken = query({
+  args: { tokenIdentifier: v.string() },
+  handler: async (ctx, args) => ctx.db
+    .query('users')
+    .withIndex('by_token', (q) =>
+      q.eq('tokenIdentifier', args.tokenIdentifier)
+    )
+    .unique()
+})
+
 export const store = mutation({
   args: { userId: v.string(), userName: v.string(), avatar: v.optional(v.string()) },
   handler: async (ctx, args) => {

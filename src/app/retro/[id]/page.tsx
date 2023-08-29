@@ -34,7 +34,13 @@ export default function Retro(props: RetroProps) {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
-      CreateNote({ body: note.body, pipeline, retroId: retro?._id, userId: me._id, anonymous: note.anonymous })
+      CreateNote({
+        body: note.body,
+        pipeline,
+        retroId: retro._id ?? retroId,
+        userId: me._id,
+        anonymous: note.anonymous
+      })
       setOpened({ good: false, bad: false, action: false })
     }
     setNote({ body: '', anonymous: false })

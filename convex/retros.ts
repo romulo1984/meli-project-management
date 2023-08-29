@@ -1,12 +1,36 @@
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
+import { asyncMap } from './lib/relationships'
+import { Doc } from './_generated/dataModel'
+
+const unknownUser = {
+  name: 'Unknown',
+}
 
 export const get = query({
   args: { id: v.id('retros') },
-  handler: async (ctx, args) => ctx.db
-    .query('retros')
-    .filter(q => q.eq(q.field('_id'), args.id))
-    .unique()
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+    const notes = await ctx.db
+      .query('notes')
+      .withIndex('by_retro_id', (q) => q.eq('retroId', args.id))
+      .collect()
+    const usersRetro = await ctx.db
+      .query('users_retro')
+      .withIndex('by_retro_id', (q) => q.eq('retroId', args.id))
+      .collect()
+    
+    const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
+
+    return {
+      ...retro,
+      owner,
+      notes,
+      users: await asyncMap(usersRetro, (user) => {
+        return ctx.db.get(user.userId)
+      })
+    }
+  }
 })
 
 export const myRetros = query({
@@ -19,9 +43,29 @@ export const myRetros = query({
       )
       .collect()
 
-      return Promise.all(usersRetro.map((userRetro) => {
-        return ctx.db.get(userRetro.retroId)
-      }))
+      return asyncMap(usersRetro, async (userRetro) => {
+        const retro = await ctx.db.get(userRetro.retroId)
+        let users: Doc<'users_retro'>[] = []
+        
+        if (retro) {
+          users = await ctx.db
+            .query('users_retro')
+            .withIndex('by_retro_id', (q) =>
+              q.eq('retroId', retro._id)
+            )
+            .collect()
+        }
+
+        const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
+
+        return {
+          ...retro,
+          owner,
+          users: await asyncMap(users, (user) => {
+            return ctx.db.get(user.userId)
+          })
+        }
+      })
   }
 })
 

@@ -14,6 +14,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as lib_relationships from "../lib/relationships";
 import type * as notes from "../notes";
 import type * as retros from "../retros";
 import type * as users from "../users";
@@ -28,6 +29,7 @@ import type * as users_retro from "../users_retro";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "lib/relationships": typeof lib_relationships;
   notes: typeof notes;
   retros: typeof retros;
   users: typeof users;

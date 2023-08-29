@@ -14,8 +14,8 @@ const useRetro = (props: useRetroProps) => {
   const { user } = useUser()
 
   const retro = useQuery(api.retros.get, { id: retroId })
-  const notes = useQuery(api.notes.getRetroNotes, { retroId: retroId })
-  const users = useQuery(api.users.getRetroUsers, { retroId: retroId })
+  const notes = retro?.notes
+  const users = retro?.users
 
   const me = users?.find((u) => u?.tokenIdentifier === user?.id)
 

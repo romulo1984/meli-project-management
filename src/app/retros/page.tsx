@@ -3,6 +3,7 @@ import useMyRetros from '@/helpers/hooks/useMyRetros'
 import Loading from '@/components/loading'
 import { Doc } from '@convex/_generated/dataModel'
 import Link from 'next/link'
+import Participants from '@/components/participants'
 
 export default function Retros() {
   const { retros, isLoading, me } = useMyRetros()
@@ -24,12 +25,13 @@ export default function Retros() {
               <div className="min-w-0 flex-auto">
                 <p className="text-sm font-semibold leading-6 text-gray-900">{retro?.name}</p>
                 <p className="mt-1 truncate text-xs leading-5 text-gray-500">
-                  {isOwner(retro) ? 'Created by me' : 'Created by another person'}
+                  Created by {retro?.owner?.name ?? ''}{isOwner(retro) && (' (you)')}
                 </p>
               </div>
             </div>
             <div className="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
               <p className="text-sm leading-6 text-gray-900">{formatDate(retro?._creationTime)}</p>
+              <Participants size={24} users={retro.users} />
             </div>
           </Link>
         )))}

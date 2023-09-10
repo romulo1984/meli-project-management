@@ -12,6 +12,7 @@ import Participants from '@/components/participants'
 import { useJoinRetro } from '@/helpers/hooks/useJoinRetro'
 import Loading from '@/components/loading'
 import InlineEditName from '@/components/inline-edit-name'
+import Timer from '@/components/timer'
 
 interface RetroProps {
   params: {
@@ -24,7 +25,7 @@ export default function Retro(props: RetroProps) {
   const [note, setNote] = useState({ body: '', anonymous: false })
   const [pipeline, setPipeline] = useState<'good' | 'bad' | 'action'>('good')
   const [opened, setOpened] = useState({ bad: false, good: false, action: false })
-  const { isLoading, retro, notes, users, me } = useRetro({ retroId })
+  const { isLoading, retro, notes, users, me, setTimer, startTimer, resetTimer } = useRetro({ retroId })
   const CreateNote = useMutation(api.notes.store)
   const RemoveNote = useMutation(api.notes.remove)
   const { isSignedIn } = useUser()
@@ -67,7 +68,7 @@ export default function Retro(props: RetroProps) {
       {isLoading ? <Loading /> : (
         <>
           <div className='flex justify-between items-center mb-8'>
-            <div className='flex flex-col w-full'>
+            <div className='flex flex-col w-1/2'>
               <InlineEditName
                 disabled={retro?.ownerId !== me?._id}
                 retroId={retro?._id}
@@ -77,7 +78,17 @@ export default function Retro(props: RetroProps) {
                 Created in {formatDate(retro?._creationTime)}
               </p>
             </div>
-            <Participants users={users} />
+            <div className='flex content-end items-center'>
+              <Timer
+                timer={retro?.timer || 0}
+                start={retro?.startTimer || 0}
+                status={retro?.timerStatus || 'not_started'}
+                setTimer={setTimer}
+                startTimer={startTimer}
+                resetTimer={resetTimer}
+              />
+              <Participants users={users} />
+            </div>
           </div>
           {!isSignedIn && <NotLoggedAlert />}
           <div className='flex gap-6'>

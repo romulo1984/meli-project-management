@@ -105,3 +105,19 @@ export const update = mutation({
     }
   }
 })
+
+export const updateTimer = mutation({
+  args: {
+    id: v.id('retros'),
+    timer: v.optional(v.number()),
+    startTimer: v.optional(v.number()),
+    timerStatus: v.optional(v.string()),
+  },
+  handler: async (ctx, { id, ...args }) => {
+    const retro = await ctx.db.get(id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, args)
+    }
+  }
+})

@@ -81,6 +81,7 @@ export const store = mutation({
 
     const payload = {
       name: `Retrô ${new Date().toDateString()}`,
+      timer: 45000,
       ownerId: user?._id!,
     }
 

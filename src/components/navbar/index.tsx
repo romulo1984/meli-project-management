@@ -7,8 +7,13 @@ export default function Navbar() {
 
   return (
     <nav className='container mx-auto max-w-screen-xl py-6 px-6 flex justify-between'>
-      <h1 className='text-2xl font-thin text-slate-600'>
-        <a href='/'>#time-do-fernando</a>
+      <h1 className='text-3xl font-bold'>
+        <a href='/'>
+          <span className='text-slate-400'>/</span>
+          <span className='text-slate-600'>retro</span>
+          <span className='text-pink-400'>spec</span>
+          <span className='text-indigo-400'>tool</span>
+        </a>
       </h1>
       <div className='flex justify-end items-center'>
         {isSignedIn ? (

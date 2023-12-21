@@ -7,7 +7,7 @@ import { InitUser } from '@/helpers/InitUser'
 const roboto = Roboto({ subsets: ['latin'], weight: ['100', '400', '900'] })
 
 export const metadata: Metadata = {
-  title: 'Retrônomo',
+  title: '/retrospectool',
   description: 'Create and manage retrospectives for your team.',
 }
 

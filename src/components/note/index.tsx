@@ -24,7 +24,7 @@ export default function Note (props: NoteProps) {
 
   const speechNote = () => {
     setSpeaking(true)
-    SpechText(note?.body, 'AI')
+    SpechText(note?.body, 'native')
       .finally(() => {
         setSpeaking(false)
       })

@@ -28,6 +28,7 @@ export default function Retro(props: RetroProps) {
   const { isLoading, retro, notes, users, me, setTimer, startTimer, resetTimer } = useRetro({ retroId })
   const CreateNote = useMutation(api.notes.store)
   const RemoveNote = useMutation(api.notes.remove)
+  const LikeNote = useMutation(api.notes.likeToggle)
   const { isSignedIn } = useUser()
   useJoinRetro({ retroId })
 
@@ -62,6 +63,10 @@ export default function Retro(props: RetroProps) {
     month: 'long',
     day: 'numeric'
   })
+
+  const handleLike = ({ id }: { id: Id<'notes'> }) => {
+    if (me) LikeNote({ noteId: id, userId: me?._id })
+  }
 
   return (
     <main className='container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col'>
@@ -113,6 +118,7 @@ export default function Retro(props: RetroProps) {
                   user={getUser(note.userId)}
                   me={me}
                   removeHandler={() => RemoveNote({ id: note._id })}
+                  likeHandler={() => handleLike({ id: note._id })}
                 />
               ))}
             </div>
@@ -137,6 +143,7 @@ export default function Retro(props: RetroProps) {
                   user={getUser(note.userId)}
                   me={me}
                   removeHandler={() => RemoveNote({ id: note._id })}
+                  likeHandler={() => handleLike({ id: note._id })}
                 />
               ))}
             </div>
@@ -161,6 +168,7 @@ export default function Retro(props: RetroProps) {
                   user={getUser(note.userId)}
                   me={me}
                   removeHandler={() => RemoveNote({ id: note._id })}
+                  likeHandler={() => handleLike({ id: note._id })}
                 />
               ))}
             </div>

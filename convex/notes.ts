@@ -37,3 +37,22 @@ export const remove = mutation({
     return note
   }
 })
+
+export const likeToggle = mutation({
+  args: { noteId: v.id('notes'), userId: v.id('users') },
+  handler: async (ctx, args) => {
+    const note = await ctx.db.get(args.noteId)
+    if (note) {
+      const likes = note.likes || []
+      const index = likes.indexOf(args.userId)
+      if (index === -1) {
+        likes.push(args.userId)
+      } else {
+        likes.splice(index, 1)
+      }
+      await ctx.db.patch(note._id, { likes })
+      return likes
+    }
+    return []
+  }
+})

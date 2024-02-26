@@ -13,6 +13,7 @@ export default defineSchema({
     userId: v.id('users'),
     retroId: v.id('retros'),
     anonymous: v.optional(v.boolean()),
+    likes: v.optional(v.array(v.id('users'))),
   }).index('by_retro_id', ['retroId']),
   retros: defineTable({
     name: v.string(),

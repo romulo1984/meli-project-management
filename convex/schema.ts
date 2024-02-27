@@ -14,6 +14,7 @@ export default defineSchema({
     retroId: v.id('retros'),
     anonymous: v.optional(v.boolean()),
     likes: v.optional(v.array(v.id('users'))),
+    position: v.optional(v.number()),
   }).index('by_retro_id', ['retroId']),
   retros: defineTable({
     name: v.string(),

@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import useRetro from '@/helpers/hooks/useRetro'
-import { Id } from '@convex/_generated/dataModel'
+import { Doc, Id } from '@convex/_generated/dataModel'
 import { useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import Note from '@/components/note'
@@ -13,11 +13,27 @@ import { useJoinRetro } from '@/helpers/hooks/useJoinRetro'
 import Loading from '@/components/loading'
 import InlineEditName from '@/components/inline-edit-name'
 import Timer from '@/components/timer'
+import {
+  DndContext,
+  DragEndEvent,
+  closestCenter,
+  UniqueIdentifier,
+} from '@dnd-kit/core'
+import { Sortable } from '@/components/sortable'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
 
 interface RetroProps {
   params: {
     id: Id<'retros'>
   }
+}
+
+interface NoteItem extends Doc<'notes'> {
+  id: UniqueIdentifier
 }
 
 export default function Retro(props: RetroProps) {
@@ -29,6 +45,7 @@ export default function Retro(props: RetroProps) {
   const CreateNote = useMutation(api.notes.store)
   const RemoveNote = useMutation(api.notes.remove)
   const LikeNote = useMutation(api.notes.likeToggle)
+  const UpdatePositions = useMutation(api.notes.updatePositions)
   const { isSignedIn } = useUser()
   useJoinRetro({ retroId })
 
@@ -53,9 +70,18 @@ export default function Retro(props: RetroProps) {
     setOpened({ good: false, bad: false, action: false, [pipeline]: !opened[pipeline] })
   }
 
-  const badNotes = notes?.filter((note) => note.pipeline === 'bad')
-  const goodNotes = notes?.filter((note) => note.pipeline === 'good')
-  const actionNotes = notes?.filter((note) => note.pipeline === 'action')
+  const badNotes = notes
+    ?.filter((note) => note.pipeline === 'bad')
+    .map((note): NoteItem => ({ ...note, id: note._id }))
+    .sort((a: any, b: any) => a.position - b.position)
+  const goodNotes = notes
+    ?.filter((note) => note.pipeline === 'good')
+    .map((note): NoteItem => ({ ...note, id: note._id }))
+    .sort((a: any, b: any) => a.position - b.position)
+  const actionNotes = notes
+    ?.filter((note) => note.pipeline === 'action')
+    .map((note): NoteItem => ({ ...note, id: note._id }))
+    .sort((a: any, b: any) => a.position - b.position)
 
   const formatDate = (date: any) => (new Date(date)).toLocaleDateString('en-US', {
     weekday: 'long',
@@ -68,113 +94,151 @@ export default function Retro(props: RetroProps) {
     if (me) LikeNote({ noteId: id, userId: me?._id })
   }
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { over, active } = event;
+    
+    if (over && over?.id !== active?.id) {
+      const items = [...active?.data?.current?.sortable?.items]
+      const oldIndex = items.indexOf(active.id)
+      const newIndex = items.indexOf(over.id)
+
+      const newItems = arrayMove(items, oldIndex, newIndex)
+        .map((id, index) => ({ id, position: index }))
+
+      UpdatePositions({ notes: newItems })
+    }
+  }
+
   return (
-    <main className='container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col'>
-      {isLoading ? <Loading /> : (
-        <>
-          <div className='flex justify-between items-center mb-8'>
-            <div className='flex flex-col w-1/2'>
-              <InlineEditName
-                disabled={retro?.ownerId !== me?._id}
-                retroId={retro?._id}
-                value={retro?.name}
-              />
-              <p className='text-sm text-zinc-400'>
-                Created in {formatDate(retro?._creationTime)}
-              </p>
-            </div>
-            <div className='flex content-end items-center'>
-              <Timer
-                timer={retro?.timer || 0}
-                start={retro?.startTimer || 0}
-                status={retro?.timerStatus || 'not_started'}
-                setTimer={setTimer}
-                startTimer={startTimer}
-                resetTimer={resetTimer}
-              />
-              <Participants users={users} />
-            </div>
-          </div>
-          {!isSignedIn && <NotLoggedAlert />}
-          <div className='flex gap-6'>
-            <div className='w-full bg-zinc-100 rounded-lg p-4'>
-              <div className='flex justify-between'>
-                <h3 className='text-lg text-zinc-500 mb-4'>Good</h3>
-                <p className='text-zinc-400'>
-                  {goodNotes?.length}
+    <DndContext
+      onDragEnd={handleDragEnd}
+      collisionDetection={closestCenter}
+    >
+      <main className='container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col'>
+        {isLoading ? <Loading /> : (
+          <>
+            <div className='flex justify-between items-center mb-8'>
+              <div className='flex flex-col w-1/2'>
+                <InlineEditName
+                  disabled={retro?.ownerId !== me?._id}
+                  retroId={retro?._id}
+                  value={retro?.name}
+                />
+                <p className='text-sm text-zinc-400'>
+                  Created in {formatDate(retro?._creationTime)}
                 </p>
               </div>
-              {isSignedIn && <NoteForm
-                opened={opened.good}
-                toggleOpened={() => toggleOpened('good')}
-                newNote={note}
-                setNewNote={setNote}
-                saveHandler={handleSubmit}
-              />}
-              {goodNotes?.map((note) => (
-                <Note
-                  key={note._id}
-                  note={note}
-                  user={getUser(note.userId)}
-                  me={me}
-                  removeHandler={() => RemoveNote({ id: note._id })}
-                  likeHandler={() => handleLike({ id: note._id })}
+              <div className='flex content-end items-center'>
+                <Timer
+                  timer={retro?.timer || 0}
+                  start={retro?.startTimer || 0}
+                  status={retro?.timerStatus || 'not_started'}
+                  setTimer={setTimer}
+                  startTimer={startTimer}
+                  resetTimer={resetTimer}
                 />
-              ))}
-            </div>
-            <div className='w-full bg-zinc-100 rounded-lg p-4'>
-              <div className='flex justify-between'>
-                <h3 className='text-lg text-zinc-500 mb-4'>Bad</h3>
-                <p className='text-zinc-400'>
-                  {badNotes?.length}
-                </p>
+                <Participants users={users} />
               </div>
-              {isSignedIn && <NoteForm
-                opened={opened.bad}
-                toggleOpened={() => toggleOpened('bad')}
-                newNote={note}
-                setNewNote={setNote}
-                saveHandler={handleSubmit}
-              />}
-              {badNotes?.map((note) => (
-                <Note
-                  key={note._id}
-                  note={note} 
-                  user={getUser(note.userId)}
-                  me={me}
-                  removeHandler={() => RemoveNote({ id: note._id })}
-                  likeHandler={() => handleLike({ id: note._id })}
-                />
-              ))}
             </div>
-            <div className='w-full bg-zinc-100 rounded-lg p-4'>
-              <div className='flex justify-between'>
-                <h3 className='text-lg text-zinc-500 mb-4'>Actions</h3>
-                <p className='text-zinc-400'>
-                  {actionNotes?.length}
-                </p>
+            {!isSignedIn && <NotLoggedAlert />}
+            <div className='flex gap-6'>
+              <div className='w-full bg-zinc-100 rounded-lg p-4'>
+                <div className='flex justify-between'>
+                  <h3 className='text-lg text-zinc-500 mb-4'>Good</h3>
+                  <p className='text-zinc-400'>
+                    {goodNotes?.length}
+                  </p>
+                </div>
+                {isSignedIn && <NoteForm
+                  opened={opened.good}
+                  toggleOpened={() => toggleOpened('good')}
+                  newNote={note}
+                  setNewNote={setNote}
+                  saveHandler={handleSubmit}
+                />}
+                {goodNotes && (
+                  <SortableContext items={goodNotes} strategy={verticalListSortingStrategy}>
+                    {goodNotes?.map((note) => (
+                      <Sortable key={note._id} id={note._id}>
+                        <Note
+                          key={note._id}
+                          note={note}
+                          user={getUser(note.userId)}
+                          me={me}
+                          removeHandler={() => RemoveNote({ id: note._id })}
+                          likeHandler={() => handleLike({ id: note._id })}
+                        />
+                      </Sortable>
+                    ))}
+                  </SortableContext>
+                )}
               </div>
-              {isSignedIn && <NoteForm
-                opened={opened.action}
-                toggleOpened={() => toggleOpened('action')}
-                newNote={note}
-                setNewNote={setNote}
-                saveHandler={handleSubmit}
-              />}
-              {actionNotes?.map((note) => (
-                <Note
-                  key={note._id}
-                  note={note} 
-                  user={getUser(note.userId)}
-                  me={me}
-                  removeHandler={() => RemoveNote({ id: note._id })}
-                  likeHandler={() => handleLike({ id: note._id })}
-                />
-              ))}
+              <div className='w-full bg-zinc-100 rounded-lg p-4'>
+                <div className='flex justify-between'>
+                  <h3 className='text-lg text-zinc-500 mb-4'>Bad</h3>
+                  <p className='text-zinc-400'>
+                    {badNotes?.length}
+                  </p>
+                </div>
+                {isSignedIn && <NoteForm
+                  opened={opened.bad}
+                  toggleOpened={() => toggleOpened('bad')}
+                  newNote={note}
+                  setNewNote={setNote}
+                  saveHandler={handleSubmit}
+                />}
+                {badNotes && (
+                  <SortableContext items={badNotes} strategy={verticalListSortingStrategy}>
+                    {badNotes?.map((note) => (
+                      <Sortable key={note._id} id={note._id}>
+                        <Note
+                          key={note._id}
+                          note={note} 
+                          user={getUser(note.userId)}
+                          me={me}
+                          removeHandler={() => RemoveNote({ id: note._id })}
+                          likeHandler={() => handleLike({ id: note._id })}
+                        />
+                      </Sortable>
+                    ))}
+                  </SortableContext>
+                )}
+              </div>
+              <div className='w-full bg-zinc-100 rounded-lg p-4'>
+                <div className='flex justify-between'>
+                  <h3 className='text-lg text-zinc-500 mb-4'>Actions</h3>
+                  <p className='text-zinc-400'>
+                    {actionNotes?.length}
+                  </p>
+                </div>
+                {isSignedIn && <NoteForm
+                  opened={opened.action}
+                  toggleOpened={() => toggleOpened('action')}
+                  newNote={note}
+                  setNewNote={setNote}
+                  saveHandler={handleSubmit}
+                />}
+                {actionNotes && (
+                  <SortableContext items={actionNotes} strategy={verticalListSortingStrategy}>
+                    {actionNotes?.map((note) => (
+                      <Sortable key={note._id} id={note._id}>
+                        <Note
+                          key={note._id}
+                          note={note} 
+                          user={getUser(note.userId)}
+                          me={me}
+                          removeHandler={() => RemoveNote({ id: note._id })}
+                          likeHandler={() => handleLike({ id: note._id })}
+                        />
+                      </Sortable>
+                    ))}
+                  </SortableContext>
+                )}
+              </div>
             </div>
-          </div>
-        </>
-      )}
-    </main>
+          </>
+        )}
+      </main>
+    </DndContext>
   )
 }

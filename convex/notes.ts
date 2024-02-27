@@ -56,3 +56,18 @@ export const likeToggle = mutation({
     return []
   }
 })
+
+export const updatePositions = mutation({
+  args: {
+    notes: v.array(v.object({
+      id: v.id('notes'),
+      position: v.number(),
+    }))
+  },
+  handler: async (ctx, args) => {
+    for (const note of args.notes) {
+      await ctx.db.patch(note.id, { position: note.position })
+    }
+    return true
+  }
+})

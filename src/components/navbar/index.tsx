@@ -7,7 +7,7 @@ export default function Navbar() {
 
   return (
     <nav className='container mx-auto max-w-screen-xl py-6 px-6 flex justify-between'>
-      <h1 className='text-3xl font-bold'>
+      <h1 className='text-2xl md:text-3xl font-bold'>
         <a href='/'>
           <span className='text-slate-400'>/</span>
           <span className='text-slate-600'>retro</span>

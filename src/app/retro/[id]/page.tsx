@@ -117,8 +117,8 @@ export default function Retro(props: RetroProps) {
       <main className='container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col'>
         {isLoading ? <Loading /> : (
           <>
-            <div className='flex justify-between items-center mb-8'>
-              <div className='flex flex-col w-1/2'>
+            <div className='flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-6'>
+              <div className='flex flex-col md:w-1/2'>
                 <InlineEditName
                   disabled={retro?.ownerId !== me?._id}
                   retroId={retro?._id}
@@ -128,7 +128,7 @@ export default function Retro(props: RetroProps) {
                   Created in {formatDate(retro?._creationTime)}
                 </p>
               </div>
-              <div className='flex content-end items-center'>
+              <div className='flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center'>
                 <Timer
                   timer={retro?.timer || 0}
                   start={retro?.startTimer || 0}
@@ -141,7 +141,7 @@ export default function Retro(props: RetroProps) {
               </div>
             </div>
             {!isSignedIn && <NotLoggedAlert />}
-            <div className='flex gap-6'>
+            <div className='grid md:grid-cols-3 gap-6'>
               <div className='w-full bg-zinc-100 rounded-lg p-4'>
                 <div className='flex justify-between'>
                   <h3 className='text-lg text-zinc-500 mb-4'>Good</h3>

@@ -57,7 +57,7 @@ export default function Timer (props: TimerProps) {
   }, [status, start, timer, resetTimer])
 
   return (
-    <div className={`${status === 'started' ? 'bg-red-200' : 'bg-slate-50'} mr-6 flex items-center gap-4 px-4 py-2 rounded-lg`}>
+    <div className={`${status === 'started' ? 'bg-red-200' : 'bg-slate-50'} flex items-center gap-4 px-4 py-2 rounded-lg`}>
       <button onClick={handleShowTimeOptions}>
         <svg className='scale-[0.8] fill-slate-400' xmlns='http://www.w3.org/2000/svg' height='1em' viewBox='0 0 320 512'>
           {showTimeOptions ?

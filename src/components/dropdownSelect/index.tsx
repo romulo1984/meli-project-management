@@ -91,7 +91,7 @@ export default function DropdownSelect(props: DropdownSelectProps) {
                 href="#"
                 onClick={(e) => selectHandler(e, user._id)}
                 className={`${
-                  user._id === selected._id
+                  user?._id === selected?._id
                     ? "bg-gray-200 border-zinc-400 border-s-4"
                     : "hover:bg-gray-100 dark:hover:bg-gray-600"
                 } flex items-center px-4 py-2 dark:hover:text-white`}

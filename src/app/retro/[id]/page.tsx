@@ -1,55 +1,68 @@
-'use client'
-import { useState } from 'react'
-import useRetro from '@/helpers/hooks/useRetro'
-import { Doc, Id } from '@convex/_generated/dataModel'
-import { useMutation } from 'convex/react'
-import { api } from '@convex/_generated/api'
-import Note from '@/components/note'
-import NoteForm from '@/components/note-form'
-import { useUser } from '@clerk/clerk-react'
-import NotLoggedAlert from '@/components/not-logged-alert'
-import Participants from '@/components/participants'
-import { useJoinRetro } from '@/helpers/hooks/useJoinRetro'
-import Loading from '@/components/loading'
-import InlineEditName from '@/components/inline-edit-name'
-import Timer from '@/components/timer'
+"use client";
+import { useState } from "react";
+import useRetro from "@/helpers/hooks/useRetro";
+import { Doc, Id } from "@convex/_generated/dataModel";
+import { useMutation } from "convex/react";
+import { api } from "@convex/_generated/api";
+import Note from "@/components/note";
+import NoteForm from "@/components/note-form";
+import { useUser } from "@clerk/clerk-react";
+import NotLoggedAlert from "@/components/not-logged-alert";
+import Participants from "@/components/participants";
+import { useJoinRetro } from "@/helpers/hooks/useJoinRetro";
+import Loading from "@/components/loading";
+import InlineEditName from "@/components/inline-edit-name";
+import Timer from "@/components/timer";
 import {
   DndContext,
   DragEndEvent,
   closestCenter,
   UniqueIdentifier,
-} from '@dnd-kit/core'
-import { Sortable } from '@/components/sortable'
+} from "@dnd-kit/core";
+import { Sortable } from "@/components/sortable";
 import {
   SortableContext,
   verticalListSortingStrategy,
   arrayMove,
-} from '@dnd-kit/sortable'
+} from "@dnd-kit/sortable";
 
 interface RetroProps {
   params: {
-    id: Id<'retros'>
-  }
+    id: Id<"retros">;
+  };
 }
 
-interface NoteItem extends Doc<'notes'> {
-  id: UniqueIdentifier
+interface NoteItem extends Doc<"notes"> {
+  id: UniqueIdentifier;
 }
 
 export default function Retro(props: RetroProps) {
-  const retroId = props.params.id
-  const [note, setNote] = useState({ body: '', anonymous: false })
-  const [pipeline, setPipeline] = useState<'good' | 'bad' | 'action'>('good')
-  const [opened, setOpened] = useState({ bad: false, good: false, action: false })
-  const { isLoading, retro, notes, users, me, setTimer, startTimer, resetTimer } = useRetro({ retroId })
-  const CreateNote = useMutation(api.notes.store)
-  const RemoveNote = useMutation(api.notes.remove)
-  const LikeNote = useMutation(api.notes.likeToggle)
-  const UpdatePositions = useMutation(api.notes.updatePositions)
-  const { isSignedIn } = useUser()
-  useJoinRetro({ retroId })
+  const retroId = props.params.id;
+  const [note, setNote] = useState({ body: "", anonymous: false });
+  const [pipeline, setPipeline] = useState<"good" | "bad" | "action">("good");
+  const [opened, setOpened] = useState({
+    bad: false,
+    good: false,
+    action: false,
+  });
+  const {
+    isLoading,
+    retro,
+    notes,
+    users,
+    me,
+    setTimer,
+    startTimer,
+    resetTimer,
+  } = useRetro({ retroId });
+  const CreateNote = useMutation(api.notes.store);
+  const RemoveNote = useMutation(api.notes.remove);
+  const LikeNote = useMutation(api.notes.likeToggle);
+  const UpdatePositions = useMutation(api.notes.updatePositions);
+  const { isSignedIn } = useUser();
+  useJoinRetro({ retroId });
 
-  const getUser = (id: string) => users?.find((user) => user?._id === id)
+  const getUser = (id: string) => users?.find((user) => user?._id === id);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
@@ -58,81 +71,87 @@ export default function Retro(props: RetroProps) {
         pipeline,
         retroId: retro._id ?? retroId,
         userId: me._id,
-        anonymous: note.anonymous
-      })
-      setOpened({ good: false, bad: false, action: false })
+        anonymous: note.anonymous,
+      });
+      setOpened({ good: false, bad: false, action: false });
     }
-    setNote({ body: '', anonymous: false })
-  }
+    setNote({ body: "", anonymous: false });
+  };
 
-  const toggleOpened = (pipeline: 'good' | 'bad' | 'action') => {
-    setPipeline(pipeline)
-    setOpened({ good: false, bad: false, action: false, [pipeline]: !opened[pipeline] })
-  }
+  const toggleOpened = (pipeline: "good" | "bad" | "action") => {
+    setPipeline(pipeline);
+    setOpened({
+      good: false,
+      bad: false,
+      action: false,
+      [pipeline]: !opened[pipeline],
+    });
+  };
 
   const badNotes = notes
-    ?.filter((note) => note.pipeline === 'bad')
+    ?.filter((note) => note.pipeline === "bad")
     .map((note): NoteItem => ({ ...note, id: note._id }))
-    .sort((a: any, b: any) => a.position - b.position)
+    .sort((a: any, b: any) => a.position - b.position);
   const goodNotes = notes
-    ?.filter((note) => note.pipeline === 'good')
+    ?.filter((note) => note.pipeline === "good")
     .map((note): NoteItem => ({ ...note, id: note._id }))
-    .sort((a: any, b: any) => a.position - b.position)
+    .sort((a: any, b: any) => a.position - b.position);
   const actionNotes = notes
-    ?.filter((note) => note.pipeline === 'action')
+    ?.filter((note) => note.pipeline === "action")
     .map((note): NoteItem => ({ ...note, id: note._id }))
-    .sort((a: any, b: any) => a.position - b.position)
+    .sort((a: any, b: any) => a.position - b.position);
 
-  const formatDate = (date: any) => (new Date(date)).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  const formatDate = (date: any) =>
+    new Date(date).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
 
-  const handleLike = ({ id }: { id: Id<'notes'> }) => {
-    if (me) LikeNote({ noteId: id, userId: me?._id })
-  }
+  const handleLike = ({ id }: { id: Id<"notes"> }) => {
+    if (me) LikeNote({ noteId: id, userId: me?._id });
+  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { over, active } = event;
-    
+
     if (over && over?.id !== active?.id) {
-      const items = [...active?.data?.current?.sortable?.items]
-      const oldIndex = items.indexOf(active.id)
-      const newIndex = items.indexOf(over.id)
+      const items = [...active?.data?.current?.sortable?.items];
+      const oldIndex = items.indexOf(active.id);
+      const newIndex = items.indexOf(over.id);
 
-      const newItems = arrayMove(items, oldIndex, newIndex)
-        .map((id, index) => ({ id, position: index }))
+      const newItems = arrayMove(items, oldIndex, newIndex).map(
+        (id, index) => ({ id, position: index })
+      );
 
-      UpdatePositions({ notes: newItems })
+      UpdatePositions({ notes: newItems });
     }
-  }
+  };
 
   return (
-    <DndContext
-      onDragEnd={handleDragEnd}
-      collisionDetection={closestCenter}
-    >
-      <main className='container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col'>
-        {isLoading ? <Loading /> : (
+    <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
+      <main className="container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col">
+        {isLoading ? (
+          <Loading />
+        ) : (
           <>
-            <div className='flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-6'>
-              <div className='flex flex-col md:w-1/2'>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-6">
+              <div className="flex flex-col md:w-1/2">
                 <InlineEditName
                   disabled={retro?.ownerId !== me?._id}
                   retroId={retro?._id}
                   value={retro?.name}
                 />
-                <p className='text-sm text-zinc-400'>
+                <p className="text-sm text-zinc-400">
                   Created in {formatDate(retro?._creationTime)}
                 </p>
               </div>
-              <div className='flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center'>
+              <div className="flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center">
                 <Timer
                   timer={retro?.timer || 0}
                   start={retro?.startTimer || 0}
-                  status={retro?.timerStatus || 'not_started'}
+                  status={retro?.timerStatus || "not_started"}
                   setTimer={setTimer}
                   startTimer={startTimer}
                   resetTimer={resetTimer}
@@ -141,23 +160,26 @@ export default function Retro(props: RetroProps) {
               </div>
             </div>
             {!isSignedIn && <NotLoggedAlert />}
-            <div className='grid md:grid-cols-3 gap-6'>
-              <div className='w-full bg-zinc-100 rounded-lg p-4'>
-                <div className='flex justify-between'>
-                  <h3 className='text-lg text-zinc-500 mb-4'>Good</h3>
-                  <p className='text-zinc-400'>
-                    {goodNotes?.length}
-                  </p>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="w-full bg-zinc-100 rounded-lg p-4">
+                <div className="flex justify-between">
+                  <h3 className="text-lg text-zinc-500 mb-4">Good</h3>
+                  <p className="text-zinc-400">{goodNotes?.length}</p>
                 </div>
-                {isSignedIn && <NoteForm
-                  opened={opened.good}
-                  toggleOpened={() => toggleOpened('good')}
-                  newNote={note}
-                  setNewNote={setNote}
-                  saveHandler={handleSubmit}
-                />}
+                {isSignedIn && (
+                  <NoteForm
+                    opened={opened.good}
+                    toggleOpened={() => toggleOpened("good")}
+                    newNote={note}
+                    setNewNote={setNote}
+                    saveHandler={handleSubmit}
+                  />
+                )}
                 {goodNotes && (
-                  <SortableContext items={goodNotes} strategy={verticalListSortingStrategy}>
+                  <SortableContext
+                    items={goodNotes}
+                    strategy={verticalListSortingStrategy}
+                  >
                     {goodNotes?.map((note) => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
@@ -173,27 +195,30 @@ export default function Retro(props: RetroProps) {
                   </SortableContext>
                 )}
               </div>
-              <div className='w-full bg-zinc-100 rounded-lg p-4'>
-                <div className='flex justify-between'>
-                  <h3 className='text-lg text-zinc-500 mb-4'>Bad</h3>
-                  <p className='text-zinc-400'>
-                    {badNotes?.length}
-                  </p>
+              <div className="w-full bg-zinc-100 rounded-lg p-4">
+                <div className="flex justify-between">
+                  <h3 className="text-lg text-zinc-500 mb-4">Bad</h3>
+                  <p className="text-zinc-400">{badNotes?.length}</p>
                 </div>
-                {isSignedIn && <NoteForm
-                  opened={opened.bad}
-                  toggleOpened={() => toggleOpened('bad')}
-                  newNote={note}
-                  setNewNote={setNote}
-                  saveHandler={handleSubmit}
-                />}
+                {isSignedIn && (
+                  <NoteForm
+                    opened={opened.bad}
+                    toggleOpened={() => toggleOpened("bad")}
+                    newNote={note}
+                    setNewNote={setNote}
+                    saveHandler={handleSubmit}
+                  />
+                )}
                 {badNotes && (
-                  <SortableContext items={badNotes} strategy={verticalListSortingStrategy}>
+                  <SortableContext
+                    items={badNotes}
+                    strategy={verticalListSortingStrategy}
+                  >
                     {badNotes?.map((note) => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
                           key={note._id}
-                          note={note} 
+                          note={note}
                           user={getUser(note.userId)}
                           me={me}
                           removeHandler={() => RemoveNote({ id: note._id })}
@@ -204,29 +229,33 @@ export default function Retro(props: RetroProps) {
                   </SortableContext>
                 )}
               </div>
-              <div className='w-full bg-zinc-100 rounded-lg p-4'>
-                <div className='flex justify-between'>
-                  <h3 className='text-lg text-zinc-500 mb-4'>Actions</h3>
-                  <p className='text-zinc-400'>
-                    {actionNotes?.length}
-                  </p>
+              <div className="w-full bg-zinc-100 rounded-lg p-4">
+                <div className="flex justify-between">
+                  <h3 className="text-lg text-zinc-500 mb-4">Actions</h3>
+                  <p className="text-zinc-400">{actionNotes?.length}</p>
                 </div>
-                {isSignedIn && <NoteForm
-                  opened={opened.action}
-                  toggleOpened={() => toggleOpened('action')}
-                  newNote={note}
-                  setNewNote={setNote}
-                  saveHandler={handleSubmit}
-                />}
+                {isSignedIn && (
+                  <NoteForm
+                    opened={opened.action}
+                    toggleOpened={() => toggleOpened("action")}
+                    newNote={note}
+                    setNewNote={setNote}
+                    saveHandler={handleSubmit}
+                  />
+                )}
                 {actionNotes && (
-                  <SortableContext items={actionNotes} strategy={verticalListSortingStrategy}>
+                  <SortableContext
+                    items={actionNotes}
+                    strategy={verticalListSortingStrategy}
+                  >
                     {actionNotes?.map((note) => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
                           key={note._id}
-                          note={note} 
+                          note={note}
                           user={getUser(note.userId)}
                           me={me}
+                          actionType
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
                         />
@@ -240,5 +269,5 @@ export default function Retro(props: RetroProps) {
         )}
       </main>
     </DndContext>
-  )
+  );
 }

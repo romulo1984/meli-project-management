@@ -26,7 +26,10 @@ export default function DropdownSelect(props: DropdownSelectProps) {
 
   useEffect(() => {
     const handleClickOutside = (event: { target: any }) => {
-      if (ref.current && !ref.current.contains(event.target)) {
+      if (
+        ref.current &&
+        !(ref.current as unknown as HTMLElement).contains(event.target)
+      ) {
         handleClick && handleClick();
       }
     };

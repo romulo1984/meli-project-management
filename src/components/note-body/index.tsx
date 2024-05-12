@@ -22,10 +22,12 @@ export default function NoteBody(props: NoteBodyProps) {
       const name = nameRegex.exec(search);
       const user = { name: name ? name[1] : "" };
 
-      replacedBody = replacedBody.replaceAll(
+      replacedBody = replacedBody.replace(
         search,
         `<span class="user-mention">@${user.name}</span>`
       );
+
+      nameRegex.lastIndex = 0;
     });
   }
 

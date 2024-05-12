@@ -173,6 +173,7 @@ export default function Retro(props: RetroProps) {
                     newNote={note}
                     setNewNote={setNote}
                     saveHandler={handleSubmit}
+                    users={users}
                   />
                 )}
                 {goodNotes && (
@@ -207,6 +208,7 @@ export default function Retro(props: RetroProps) {
                     newNote={note}
                     setNewNote={setNote}
                     saveHandler={handleSubmit}
+                    users={users}
                   />
                 )}
                 {badNotes && (
@@ -241,6 +243,7 @@ export default function Retro(props: RetroProps) {
                     newNote={note}
                     setNewNote={setNote}
                     saveHandler={handleSubmit}
+                    users={users}
                   />
                 )}
                 {actionNotes && (

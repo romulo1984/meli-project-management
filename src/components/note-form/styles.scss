@@ -7,3 +7,27 @@
     opacity: 0.2;
   }
 }
+
+.mentions-note-input {
+  @apply w-full mb-2 bg-zinc-200 rounded-lg hover:bg-zinc-300 text-slate-600;
+
+  &__highlighter,
+  &__input {
+    @apply p-4 min-h-[128px];
+  }
+
+  &__suggestions {
+    @apply z-10 bg-white absolute rounded-lg shadow w-60 dark:bg-gray-700 overflow-hidden;
+    &__item {
+      @apply p-2 cursor-pointer hover:bg-zinc-100 text-sm;
+
+      &--focused {
+        @apply bg-zinc-100;
+      }
+
+      .inside-item {
+        @apply flex items-center;
+      }
+    }
+  }
+}

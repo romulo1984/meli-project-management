@@ -9,6 +9,7 @@ import DropdownSelect from "../dropdownSelect";
 import useRetro from "@/helpers/hooks/useRetro";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
+import NoteBody from "../note-body";
 
 interface NoteProps {
   note: Doc<"notes">;
@@ -85,7 +86,9 @@ export default function Note(props: NoteProps) {
 
   return (
     <div className="w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow">
-      <p className="mb-2">{note.body}</p>
+      <p className="mb-2">
+        <NoteBody note={note} users={users} />
+      </p>
       <div className="flex justify-between items-center">
         {LeftBottomIcons()}
 

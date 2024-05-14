@@ -25,6 +25,7 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+import Dropdown from "@/components/dropdown";
 
 interface RetroProps {
   params: {
@@ -148,6 +149,12 @@ export default function Retro(props: RetroProps) {
                 </p>
               </div>
               <div className="flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center">
+                <Dropdown
+                  label="Settings"
+                  icon="(*)"
+                  color="white"
+                  background="zinc"
+                />
                 <Timer
                   timer={retro?.timer || 0}
                   start={retro?.startTimer || 0}

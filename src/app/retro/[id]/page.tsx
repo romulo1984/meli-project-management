@@ -1,31 +1,32 @@
 "use client";
-import { useState } from "react";
-import useRetro from "@/helpers/hooks/useRetro";
-import { Doc, Id } from "@convex/_generated/dataModel";
-import { useMutation } from "convex/react";
-import { api } from "@convex/_generated/api";
+import Dropdown, { DropdownItem } from "@/components/dropdown";
+import InlineEditName from "@/components/inline-edit-name";
+import Loading from "@/components/loading";
+import NotLoggedAlert from "@/components/not-logged-alert";
 import Note from "@/components/note";
 import NoteForm from "@/components/note-form";
-import { useUser } from "@clerk/clerk-react";
-import NotLoggedAlert from "@/components/not-logged-alert";
 import Participants from "@/components/participants";
-import { useJoinRetro } from "@/helpers/hooks/useJoinRetro";
-import Loading from "@/components/loading";
-import InlineEditName from "@/components/inline-edit-name";
+import { Sortable } from "@/components/sortable";
 import Timer from "@/components/timer";
+import { useJoinRetro } from "@/helpers/hooks/useJoinRetro";
+import useRetro from "@/helpers/hooks/useRetro";
+import useSettings from "@/helpers/hooks/useSettings";
+import { useUser } from "@clerk/clerk-react";
+import { api } from "@convex/_generated/api";
+import { Doc, Id } from "@convex/_generated/dataModel";
 import {
   DndContext,
   DragEndEvent,
-  closestCenter,
   UniqueIdentifier,
+  closestCenter,
 } from "@dnd-kit/core";
-import { Sortable } from "@/components/sortable";
 import {
   SortableContext,
-  verticalListSortingStrategy,
   arrayMove,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import Dropdown from "@/components/dropdown";
+import { useMutation } from "convex/react";
+import { useState } from "react";
 
 interface RetroProps {
   params: {
@@ -55,6 +56,7 @@ export default function Retro(props: RetroProps) {
     setTimer,
     startTimer,
     resetTimer,
+    settings
   } = useRetro({ retroId });
   const CreateNote = useMutation(api.notes.store);
   const RemoveNote = useMutation(api.notes.remove);
@@ -62,7 +64,10 @@ export default function Retro(props: RetroProps) {
   const UpdatePositions = useMutation(api.notes.updatePositions);
   const { isSignedIn } = useUser();
   useJoinRetro({ retroId });
-
+  const { handleSettingChange } = useSettings({
+    retroId: retroId,
+    default: settings
+  })
   const getUser = (id: string) => users?.find((user) => user?._id === id);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -130,6 +135,18 @@ export default function Retro(props: RetroProps) {
     }
   };
 
+  const settingsDropdownItems = () : DropdownItem[] => {
+    const items : DropdownItem[] = []
+
+    items.push({
+      label: settings.notesShowingStatus.label,
+      name: settings.notesShowingStatus.key,
+      selected: settings.notesShowingStatus.value === 'hidden'
+    })
+
+    return items
+  }
+
   return (
     <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
       <main className="container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col">
@@ -151,9 +168,12 @@ export default function Retro(props: RetroProps) {
               <div className="flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center">
                 <Dropdown
                   label="Settings"
-                  icon="(*)"
                   color="white"
                   background="zinc"
+                  items={settingsDropdownItems()}
+                  onItemPressed={(name: string) => {
+                    handleSettingChange(name)
+                  }}
                 />
                 <Timer
                   timer={retro?.timer || 0}
@@ -197,6 +217,7 @@ export default function Retro(props: RetroProps) {
                           me={me}
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
+                          blur={settings.notesShowingStatus.value === 'hidden'}
                         />
                       </Sortable>
                     ))}
@@ -230,6 +251,7 @@ export default function Retro(props: RetroProps) {
                           note={note}
                           user={getUser(note.userId)}
                           me={me}
+                          blur={settings.notesShowingStatus.value === 'hidden'}
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
                         />
@@ -265,7 +287,8 @@ export default function Retro(props: RetroProps) {
                           note={note}
                           user={getUser(note.userId)}
                           me={me}
-                          actionType
+                          actionType={isSignedIn}
+                          blur={settings.notesShowingStatus.value === 'hidden'}
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
                         />

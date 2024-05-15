@@ -167,9 +167,8 @@ export default function Retro(props: RetroProps) {
               </div>
               <div className="flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center">
                 <Dropdown
-                  label="Settings"
-                  color="white"
-                  background="zinc"
+                  color="zinc-400"
+                  background="slate-50"
                   items={settingsDropdownItems()}
                   onItemPressed={(name: string) => {
                     handleSettingChange(name)

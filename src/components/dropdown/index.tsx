@@ -1,5 +1,7 @@
-import useClickOutside from '@/helpers/hooks/useClickOutside'
 import { useState } from 'react'
+import useClickOutside from '@/helpers/hooks/useClickOutside'
+import { faGear } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 export interface DropdownItem {
   label: string
@@ -9,16 +11,20 @@ export interface DropdownItem {
 
 interface DropdownProps {
   label?: string
-  icon?: 'gear' | ''
+  icon?: 'gear'
   background: string
   color: string
   items: DropdownItem[]
   onItemPressed: (name: string) => void
 }
 
+const AVAILABLE_ICONS = {
+  'gear': faGear
+}
+
 export default function Dropdown({
   label = '',
-  icon = '',
+  icon = 'gear',
   color,
   background,
   items, onItemPressed
@@ -26,12 +32,26 @@ export default function Dropdown({
   const [showing, setShowing] = useState(false)
   const clickOutsideRef = useClickOutside(() => setShowing(false))
 
+  const renderIconOrLabel = () => {
+    if (label && label.length > 0) {
+      return label
+    }
+
+    const availableIcon = AVAILABLE_ICONS[icon]
+
+    if (icon.length < 1 || !availableIcon) {
+      return <></>
+    }
+
+    return <FontAwesomeIcon icon={availableIcon} />
+  }
+
   return (
     <div className="relative">
       <button
         onClick={() => setShowing(old => !old)}
-        className={`p-2 px-5 rounded-xl bg-${background}-800 text-${color}-800`}>
-        {label} {icon}
+        className={`p-2 px-5 rounded-xl bg-${background} text-${color}`}>
+          {renderIconOrLabel()}
       </button>
 
       {showing && (

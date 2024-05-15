@@ -1,11 +1,5 @@
-import { AnonymousIcon } from './anonymous';
-import { LikeIcon } from './like';
-import { SpeakerIcon } from './speaker';
-import { DeleteIcon } from './delete';
-
-export {
-    SpeakerIcon,
-    DeleteIcon,
-    LikeIcon,
-    AnonymousIcon
-}
+export { AnonymousIcon } from './anonymous';
+export { LikeIcon } from './like';
+export { SpeakerIcon } from './speaker';
+export { DeleteIcon } from './delete';
+export { GearIcon } from './gear'

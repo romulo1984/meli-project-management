@@ -77,6 +77,7 @@ export default function NoteForm(props: NoteFormProps) {
                 setNewNote?.({ ...newNote, body: e.target.value })
               }
               rows={4}
+              autoFocus
             >
               <Mention
                 trigger="@"

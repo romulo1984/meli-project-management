@@ -1,14 +1,14 @@
 "use client";
-import { Doc, Id } from "@convex/_generated/dataModel";
-import Image from "next/image";
+import useRetro from "@/helpers/hooks/useRetro";
 import RandomNames from "@/helpers/randomNames";
 import SpechText from "@/helpers/spechText";
-import { useMemo, useState } from "react";
-import { SpeakerIcon, DeleteIcon, LikeIcon, AnonymousIcon } from "../icons";
-import DropdownSelect from "../dropdownSelect";
-import useRetro from "@/helpers/hooks/useRetro";
-import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
+import { Doc, Id } from "@convex/_generated/dataModel";
+import { useMutation } from "convex/react";
+import Image from "next/image";
+import { useMemo, useState } from "react";
+import DropdownSelect from "../dropdownSelect";
+import { AnonymousIcon, DeleteIcon, LikeIcon, SpeakerIcon } from "../icons";
 import NoteBody from "../note-body";
 import NoteForm from "../note-form";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -20,6 +20,7 @@ interface NoteProps {
   user: Doc<"users"> | undefined | null;
   me?: Doc<"users"> | undefined | null;
   actionType?: boolean;
+  blur?: boolean
   removeHandler?: () => void;
   likeHandler?: () => void;
 }
@@ -30,7 +31,7 @@ interface NoteStructure {
 }
 
 export default function Note(props: NoteProps) {
-  const { note, user, me, actionType, removeHandler, likeHandler } = props;
+  const { note, user, me, actionType, removeHandler, likeHandler, blur = false } = props;
   const { users } = useRetro({ retroId: note.retroId });
   const [speaking, setSpeaking] = useState(false);
   const [editing, setEditing] = useState({
@@ -47,6 +48,7 @@ export default function Note(props: NoteProps) {
   const isOwner = me?._id === user?._id;
 
   const isAnonymous = note.anonymous !== undefined && note.anonymous === true;
+  const obfuscate = blur && !isOwner
 
   const randomName = useMemo(() => RandomNames(), []);
 
@@ -84,6 +86,15 @@ export default function Note(props: NoteProps) {
           assigneHandler={assigneHandler}
         />
       );
+
+    if (obfuscate) {
+      return (
+        <div className="blur-sm">
+          <AnonymousIcon />
+          <span className="text-zinc-400 text-xs">Hidden</span>
+        </div>
+      );
+    }
 
     if (isAnonymous)
       return (
@@ -144,7 +155,7 @@ export default function Note(props: NoteProps) {
   return (
     <div className="w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow" onDoubleClick={toggleEdition}>
       <div className="mb-2">
-        {!editing.value && <NoteBody note={note} users={users} />}
+        {!editing.value && <NoteBody note={note} users={users} obfuscate={obfuscate} />}
         {editing.value && (
           <NoteForm
             opened={editing.value}
@@ -168,30 +179,27 @@ export default function Note(props: NoteProps) {
       <div className="flex justify-between items-center">
         {LeftBottomIcons()}
 
-        <div className="flex justify-end items-center gap-3">
-          {isOwner && (
-            <div onClick={toggleEdition} className="text-zinc-400">
-              <FontAwesomeIcon icon={faEdit} />
+        {!obfuscate && (
+          <div className="flex justify-end items-center gap-3">
+            <div
+              onClick={likeHandler}
+              className="flex items-center justify-center gap-1"
+            >
+              <LikeIcon liked={youLiked} />
+              {note.likes && note.likes.length > 0 && (
+                <p className="text-xs text-zinc-400">{note.likes.length}</p>
+              )}
             </div>
-          )}
-          <div
-            onClick={likeHandler}
-            className="flex items-center justify-center gap-1"
-          >
-            <LikeIcon liked={youLiked} />
-            {note.likes && note.likes.length > 0 && (
-              <p className="text-xs text-zinc-400">{note.likes.length}</p>
+            <div onClick={speechNote}>
+              <SpeakerIcon speaking={speaking} />
+            </div>
+            {isOwner && (
+              <div onClick={handleIntentionalDelete} title="Click twice to delete this card">
+                <DeleteIcon fill={deleteIntention ? 'red-500' : 'zinc-400'} />
+              </div>
             )}
           </div>
-          <div onClick={speechNote}>
-            <SpeakerIcon speaking={speaking} />
-          </div>
-          {isOwner && (
-            <div onClick={handleIntentionalDelete} title="Click twice to delete this card">
-              <DeleteIcon fill={deleteIntention ? 'red-500' : 'zinc-400'} />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

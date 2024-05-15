@@ -140,7 +140,8 @@ export default function Retro(props: RetroProps) {
     items.push({
       label: settings.notesShowingStatus.label,
       name: settings.notesShowingStatus.key,
-      selected: settings.notesShowingStatus.value === 'hidden'
+      selected: settings.notesShowingStatus.value === 'hidden',
+      disabled: !isSignedIn,
     })
 
     return items
@@ -170,6 +171,7 @@ export default function Retro(props: RetroProps) {
                   background="slate-50"
                   items={settingsDropdownItems()}
                   onItemPressed={(name: string) => {
+                    if (!isSignedIn) return
                     handleSettingChange(name, settings)
                   }}
                 />

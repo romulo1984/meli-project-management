@@ -7,6 +7,7 @@ export interface DropdownItem {
   label: string
   name: string
   selected: boolean
+  disabled?: boolean
 }
 
 interface DropdownProps {
@@ -72,10 +73,13 @@ export default function Dropdown({
             {items.map(item => (
               <a
                 href="#"
-                className={`mt-2 mb-2 text-gray-700 block px-4 py-2 text-sm ${item.selected ? 'text-green-400' : ''}`}
+                className={`mt-2 mb-2 text-gray-700 block px-4 py-2 text-sm ${item.selected ? 'text-green-400' : ''} ${item.disabled ? 'cursor-not-allowed' : ''}`}
                 role="menuitem"
                 key={item.name}
-                onClick={() => onItemPressed(item.name)}
+                onClick={() => {
+                  if (item.disabled) return
+                  onItemPressed(item.name)
+                }}
               >
                 {renderItemIcon(item)}
                 {item.label}

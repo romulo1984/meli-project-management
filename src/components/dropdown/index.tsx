@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import useClickOutside from '@/helpers/hooks/useClickOutside'
-import { faGear } from '@fortawesome/free-solid-svg-icons'
+import { faGear, faCheckCircle, faCheck } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 export interface DropdownItem {
@@ -46,6 +46,18 @@ export default function Dropdown({
     return <FontAwesomeIcon icon={availableIcon} />
   }
 
+  const renderItemIcon = (item: DropdownItem) => {
+    if (item.selected) {
+      return (
+        <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-geen-100" />
+      )
+    }
+
+    return (
+      <FontAwesomeIcon icon={faCheck} className="mr-2 text-zinc-200" />
+    )
+  }
+
   return (
     <div className="relative">
       <button
@@ -60,11 +72,12 @@ export default function Dropdown({
             {items.map(item => (
               <a
                 href="#"
-                className={`mt-2 mb-2 text-gray-700 block px-4 py-2 text-sm ${item.selected ? 'bg-green-100' : ''}`}
+                className={`mt-2 mb-2 text-gray-700 block px-4 py-2 text-sm ${item.selected ? 'text-green-400' : ''}`}
                 role="menuitem"
                 key={item.name}
                 onClick={() => onItemPressed(item.name)}
               >
+                {renderItemIcon(item)}
                 {item.label}
               </a>
             ))}

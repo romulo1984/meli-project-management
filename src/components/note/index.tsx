@@ -181,6 +181,11 @@ export default function Note(props: NoteProps) {
 
         {!obfuscate && (
           <div className="flex justify-end items-center gap-3">
+            {isOwner && (
+              <div onClick={toggleEdition} className="text-zinc-400">
+                <FontAwesomeIcon icon={faEdit} />
+              </div>
+            )}
             <div
               onClick={likeHandler}
               className="flex items-center justify-center gap-1"

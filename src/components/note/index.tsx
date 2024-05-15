@@ -172,7 +172,7 @@ export default function Note(props: NoteProps) {
               editionHandler(editing.note)
               setEditing(old => ({ ...old, value: false }))
             }}
-            users={[]}
+            users={users}
           />
         )}
       </div>

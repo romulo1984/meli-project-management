@@ -3,14 +3,10 @@ import { Doc } from "@convex/_generated/dataModel";
 type NoteBodyProps = {
   note: any;
   users: Doc<"users">[] | any;
+  obfuscate: boolean
 };
 
-export default function NoteBody(props: NoteBodyProps) {
-  const {
-    note: { body },
-    users,
-  } = props;
-
+const replaceBody = (body: string) : string => {
   let replacedBody = body;
 
   const fullExpressionRegex = /@\[([^)]+)\]\(([^)]+)\)/g;
@@ -31,5 +27,20 @@ export default function NoteBody(props: NoteBodyProps) {
     });
   }
 
-  return <div dangerouslySetInnerHTML={{ __html: replacedBody }} />;
+  return replacedBody
+}
+
+export default function NoteBody(props: NoteBodyProps) {
+  const {
+    note: { body },
+    obfuscate = false
+  } = props;
+
+  if (obfuscate) {
+    return <div dangerouslySetInnerHTML={{
+      __html: 'c '.repeat(String(body).length / 2)
+    }} />;
+  }
+
+  return <div dangerouslySetInnerHTML={{ __html: replaceBody(body) }} />;
 }

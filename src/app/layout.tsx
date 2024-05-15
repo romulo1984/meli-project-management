@@ -4,6 +4,9 @@ import { Roboto } from "next/font/google";
 import ConvexClientProvider from "../contexts/ConvexClientProvider";
 import Navbar from "@/components/navbar";
 import { InitUser } from "@/helpers/InitUser";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const roboto = Roboto({
   subsets: ["latin"],
   weight: ["100", "400", "500", "700", "900"],
@@ -26,6 +29,7 @@ export default function RootLayout({ children }: LayoutProps) {
           <Navbar />
           <InitUser />
           {children}
+          <ToastContainer />
         </ConvexClientProvider>
       </body>
     </html>

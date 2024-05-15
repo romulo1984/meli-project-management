@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import useClickOutside from '@/helpers/hooks/useClickOutside'
-import { faGear, faCheckCircle, faCheck } from '@fortawesome/free-solid-svg-icons'
+import { faGear, faSquareCheck as faFilledSquareCheck } from '@fortawesome/free-solid-svg-icons'
+import { faSquareCheck } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 export interface DropdownItem {
@@ -28,7 +29,8 @@ export default function Dropdown({
   icon = 'gear',
   color,
   background,
-  items, onItemPressed
+  items,
+  onItemPressed
 } : DropdownProps) {
   const [showing, setShowing] = useState(false)
   const clickOutsideRef = useClickOutside(() => setShowing(false))
@@ -50,20 +52,22 @@ export default function Dropdown({
   const renderItemIcon = (item: DropdownItem) => {
     if (item.selected) {
       return (
-        <FontAwesomeIcon icon={faCheckCircle} className="mr-2 text-geen-100" />
+        <span className="text-green-600">
+          <FontAwesomeIcon icon={faFilledSquareCheck} className="mr-2" />
+        </span>
       )
     }
 
     return (
-      <FontAwesomeIcon icon={faCheck} className="mr-2 text-zinc-200" />
+      <FontAwesomeIcon icon={faSquareCheck} className="mr-2 text-zinc-200" />
     )
   }
 
   return (
     <div className="relative">
       <button
-        onClick={() => setShowing(old => !old)}
-        className={`p-2 px-5 rounded-xl bg-${background} text-${color}`}>
+        onClick={() => setShowing(!showing)}
+        className={`p-2 px-5 rounded-lg bg-${background} text-${color}`}>
           {renderIconOrLabel()}
       </button>
 
@@ -73,7 +77,7 @@ export default function Dropdown({
             {items.map(item => (
               <a
                 href="#"
-                className={`mt-2 mb-2 text-gray-700 block px-4 py-2 text-sm ${item.selected ? 'text-green-400' : ''} ${item.disabled ? 'cursor-not-allowed' : ''}`}
+                className={`mt-2 mb-2 text-gray-700 block px-4 py-2 text-sm ${item.disabled ? 'cursor-not-allowed' : ''}`}
                 role="menuitem"
                 key={item.name}
                 onClick={() => {

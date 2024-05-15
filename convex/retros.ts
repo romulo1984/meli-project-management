@@ -122,3 +122,14 @@ export const updateTimer = mutation({
     }
   }
 })
+
+export const updateNotesShowingStatus = mutation({
+  args: { id: v.id('retros'), status: v.string() },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { notesShowingStatus: args.status })
+    }
+  }
+})

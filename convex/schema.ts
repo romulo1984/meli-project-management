@@ -23,6 +23,7 @@ export default defineSchema({
     timer: v.optional(v.number()),
     startTimer: v.optional(v.number()),
     timerStatus: v.optional(v.string()),
+    notesShowingStatus: v.optional(v.string()),
   }).index('by_owner_id', ['ownerId']),
   users_retro: defineTable({
     userId: v.id('users'),

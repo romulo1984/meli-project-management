@@ -1,6 +1,9 @@
-export const DeleteIcon = () => (
+interface DeleteIconProps {
+  fill?: string
+}
+export const DeleteIcon = ({ fill = 'zinc-400' } : DeleteIconProps) => (
   <svg
-    className="cursor-pointer fill-zinc-400 hover:fill-red-500"
+    className={`cursor-pointer text-${fill} hover:fill-red-500`}
     xmlns="http://www.w3.org/2000/svg"
     height="1em"
     viewBox="0 0 448 512"

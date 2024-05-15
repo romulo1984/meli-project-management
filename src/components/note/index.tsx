@@ -13,6 +13,7 @@ import NoteBody from "../note-body";
 import NoteForm from "../note-form";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
 
 interface NoteProps {
   note: Doc<"notes">;
@@ -39,6 +40,7 @@ export default function Note(props: NoteProps) {
       anonymous: Boolean(note.anonymous)
     }
   })
+  const [deleteIntention, setDeleteIntention] = useState(false)
   const AssigneNote = useMutation(api.notes.assigne);
   const UpdateNote = useMutation(api.notes.update);
 
@@ -109,6 +111,7 @@ export default function Note(props: NoteProps) {
     );
   };
 
+
   const toggleEdition = () => {
     if (!isOwner) return
     setEditing({
@@ -118,6 +121,24 @@ export default function Note(props: NoteProps) {
         anonymous: Boolean(note.anonymous),
       }
     })
+  }
+
+  const handleIntentionalDelete = () => {
+    if (!isOwner) return
+
+    if (deleteIntention) {
+      removeHandler && removeHandler()
+      setDeleteIntention(false)
+
+      return
+    }
+
+    const delay = 4000
+    toast.error('Please, click one more time to confirm the delete action', {
+      autoClose: delay
+    })
+    setTimeout(setDeleteIntention, delay, false)
+    setDeleteIntention(true)
   }
 
   return (
@@ -166,8 +187,8 @@ export default function Note(props: NoteProps) {
             <SpeakerIcon speaking={speaking} />
           </div>
           {isOwner && (
-            <div onClick={removeHandler}>
-              <DeleteIcon />
+            <div onClick={handleIntentionalDelete} title="Click twice to delete this card">
+              <DeleteIcon fill={deleteIntention ? 'red-500' : 'zinc-400'} />
             </div>
           )}
         </div>

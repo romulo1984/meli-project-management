@@ -1,34 +1,51 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## meli-project-management
 
-## Getting Started
+This project is a retrospective tool, which allows you to create boards to be used in retrospectives, considering the forma "went well, to improve, action items".
 
-First, run the development server:
+## Installation
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+In order to run this project, you gotta make sure the dependences are correctly installed:
+```shell
+npm ci
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This projects uses the following technologies:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- [convex](https://convex.dev/)
+- [clerk](https://clerk.com/)
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+So, for you to be able to run it, it is required that you have an account on each of the platforms above.
 
-## Learn More
+## Running
 
-To learn more about Next.js, take a look at the following resources:
+### 1. Create an application on Clerk selecting the google option (like the image below):
+![Clerk - first step: create an application selecting the google option](./docs/clerk-1.png)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2.  Go to the JWT Templates and create on using the "Convex" option:
+![Clerk - second step: create a JWT Template](./docs/clerk-2.png)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### 3. Create an account under convex.dev
+Go to: [https://convex.dev](https://convex.dev) and create an account.
 
-## Deploy on Vercel
+### 4. Create a new project and configure an env key
+Go to **Settings -> Environment Variables -> + Add** and create on named `CLERK_JWT_ISSUER_DOMAIN`.
+You can find its value on details page of the JTW Template you just created on clerk. Look for the section **Issuer**.
+The value should be something like this: `https://something-awkward-here.clerk.accounts.dev`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 5. Start the envionments
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+In one terminal run:
+```
+npm run dev
+```
+
+In another terminal run:
+```
+npm run convex:dev
+```
+
+You should see a new file called `.env.local` in your project's root folder.
+
+### Youre all set!
+
+Go to http://localhost:3000

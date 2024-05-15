@@ -83,3 +83,15 @@ export const assigne = mutation({
     return false
   }
 })
+
+export const update = mutation({
+  args: { noteId: v.id('notes'), body: v.string(), anonymous: v.boolean() },
+  handler: async (ctx, args) => {
+    const note = await ctx.db.get(args.noteId)
+    if (note) {
+      await ctx.db.patch(note._id, { body: args.body, anonymous: args.anonymous })
+      return true
+    }
+    return false
+  }
+})

@@ -10,6 +10,9 @@ import useRetro from "@/helpers/hooks/useRetro";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import NoteBody from "../note-body";
+import NoteForm from "../note-form";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEdit } from "@fortawesome/free-solid-svg-icons";
 
 interface NoteProps {
   note: Doc<"notes">;
@@ -20,11 +23,24 @@ interface NoteProps {
   likeHandler?: () => void;
 }
 
+interface NoteStructure {
+  body: string
+  anonymous: boolean
+}
+
 export default function Note(props: NoteProps) {
   const { note, user, me, actionType, removeHandler, likeHandler } = props;
   const { users } = useRetro({ retroId: note.retroId });
   const [speaking, setSpeaking] = useState(false);
+  const [editing, setEditing] = useState({
+    value: false,
+    note: {
+      body: note.body,
+      anonymous: Boolean(note.anonymous)
+    }
+  })
   const AssigneNote = useMutation(api.notes.assigne);
+  const UpdateNote = useMutation(api.notes.update);
 
   const isOwner = me?._id === user?._id;
 
@@ -42,6 +58,15 @@ export default function Note(props: NoteProps) {
   const assigneHandler = (userId: Id<"users">) => {
     AssigneNote({ noteId: note._id, userId: userId });
   };
+
+  const editionHandler = (data: NoteStructure) => {
+    if (!isOwner) return
+    UpdateNote({
+      noteId: note._id,
+      anonymous: data.anonymous,
+      body: data.body,
+    })
+  }
 
   const assignedTo = users?.find((u) => u?._id === note.assignedTo);
 
@@ -84,15 +109,50 @@ export default function Note(props: NoteProps) {
     );
   };
 
+  const toggleEdition = () => {
+    if (!isOwner) return
+    setEditing({
+      value: true,
+      note: {
+        body: note.body,
+        anonymous: Boolean(note.anonymous),
+      }
+    })
+  }
+
   return (
-    <div className="w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow">
-      <p className="mb-2">
-        <NoteBody note={note} users={users} />
-      </p>
+    <div className="w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow" onDoubleClick={toggleEdition}>
+      <div className="mb-2">
+        {!editing.value && <NoteBody note={note} users={users} />}
+        {editing.value && (
+          <NoteForm
+            opened={editing.value}
+            toggleOpened={() => setEditing(old => ({
+              ...old,
+              value: false,
+            }))}
+            newNote={editing.note}
+            setNewNote={(newNote) => setEditing(old => ({
+              ...old,
+              note:  newNote
+            }))}
+            saveHandler={(_: React.FormEvent<HTMLFormElement>) => {
+              editionHandler(editing.note)
+              setEditing(old => ({ ...old, value: false }))
+            }}
+            users={[]}
+          />
+        )}
+      </div>
       <div className="flex justify-between items-center">
         {LeftBottomIcons()}
 
         <div className="flex justify-end items-center gap-3">
+          {isOwner && (
+            <div onClick={toggleEdition}>
+              <FontAwesomeIcon icon={faEdit} />
+            </div>
+          )}
           <div
             onClick={likeHandler}
             className="flex items-center justify-center gap-1"

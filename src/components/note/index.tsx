@@ -143,6 +143,7 @@ export default function Note(props: NoteProps) {
               </div>
             )}
           </div>
+        )}
       </div>
     </div>
   );

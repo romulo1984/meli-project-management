@@ -154,7 +154,7 @@ export default function Note(props: NoteProps) {
 
   return (
     <div className="w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow" onDoubleClick={toggleEdition}>
-      <div className="mb-2">
+      <div className={`mb-2 ${obfuscate ? 'blur-sm' : ''}`} >
         {!editing.value && <NoteBody note={note} users={users} obfuscate={obfuscate} />}
         {editing.value && (
           <NoteForm

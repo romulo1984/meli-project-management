@@ -66,7 +66,6 @@ export default function Retro(props: RetroProps) {
   useJoinRetro({ retroId });
   const { handleSettingChange } = useSettings({
     retroId: retroId,
-    default: settings
   })
   const getUser = (id: string) => users?.find((user) => user?._id === id);
 
@@ -171,7 +170,7 @@ export default function Retro(props: RetroProps) {
                   background="slate-50"
                   items={settingsDropdownItems()}
                   onItemPressed={(name: string) => {
-                    handleSettingChange(name)
+                    handleSettingChange(name, settings)
                   }}
                 />
                 <Timer

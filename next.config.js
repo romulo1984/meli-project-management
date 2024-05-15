@@ -7,11 +7,6 @@ const nextConfig = {
         hostname: 'img.clerk.com',
         port: ''
       },
-      {
-        protocol: 'https',
-        hostname: 'images.pexels.com',
-        port: ''
-      },
     ],
   },
   swcMinify: false

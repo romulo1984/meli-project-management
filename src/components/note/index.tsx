@@ -10,6 +10,9 @@ import { useMemo, useState } from "react";
 import DropdownSelect from "../dropdownSelect";
 import { AnonymousIcon, DeleteIcon, LikeIcon, SpeakerIcon } from "../icons";
 import NoteBody from "../note-body";
+import NoteForm from "../note-form";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEdit } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 
 interface NoteProps {
@@ -22,12 +25,25 @@ interface NoteProps {
   likeHandler?: () => void;
 }
 
+interface NoteStructure {
+  body: string
+  anonymous: boolean
+}
+
 export default function Note(props: NoteProps) {
   const { note, user, me, actionType, removeHandler, likeHandler, blur = false } = props;
   const { users } = useRetro({ retroId: note.retroId });
   const [speaking, setSpeaking] = useState(false);
+  const [editing, setEditing] = useState({
+    value: false,
+    note: {
+      body: note.body,
+      anonymous: Boolean(note.anonymous)
+    }
+  })
   const [deleteIntention, setDeleteIntention] = useState(false)
   const AssigneNote = useMutation(api.notes.assigne);
+  const UpdateNote = useMutation(api.notes.update);
 
   const isOwner = me?._id === user?._id;
 
@@ -46,6 +62,15 @@ export default function Note(props: NoteProps) {
   const assigneHandler = (userId: Id<"users">) => {
     AssigneNote({ noteId: note._id, userId: userId });
   };
+
+  const editionHandler = (data: NoteStructure) => {
+    if (!isOwner) return
+    UpdateNote({
+      noteId: note._id,
+      anonymous: data.anonymous,
+      body: data.body,
+    })
+  }
 
   const assignedTo = users?.find((u) => u?._id === note.assignedTo);
 
@@ -97,6 +122,18 @@ export default function Note(props: NoteProps) {
     );
   };
 
+
+  const toggleEdition = () => {
+    if (!isOwner) return
+    setEditing({
+      value: true,
+      note: {
+        body: note.body,
+        anonymous: Boolean(note.anonymous),
+      }
+    })
+  }
+
   const handleIntentionalDelete = () => {
     if (!isOwner) return
 
@@ -116,10 +153,29 @@ export default function Note(props: NoteProps) {
   }
 
   return (
-    <div className="w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow">
-      <p className={`mb-2 ${obfuscate ? 'blur-sm' : ''}`}>
-        <NoteBody note={note} users={users} obfuscate={obfuscate} />
-      </p>
+    <div className="w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow" onDoubleClick={toggleEdition}>
+      <div className={`mb-2 ${obfuscate ? 'blur-sm' : ''}`} >
+        {!editing.value && <NoteBody note={note} users={users} obfuscate={obfuscate} />}
+        {editing.value && (
+          <NoteForm
+            opened={editing.value}
+            toggleOpened={() => setEditing(old => ({
+              ...old,
+              value: false,
+            }))}
+            newNote={editing.note}
+            setNewNote={(newNote) => setEditing(old => ({
+              ...old,
+              note:  newNote
+            }))}
+            saveHandler={(_: React.FormEvent<HTMLFormElement>) => {
+              editionHandler(editing.note)
+              setEditing(old => ({ ...old, value: false }))
+            }}
+            users={[]}
+          />
+        )}
+      </div>
       <div className="flex justify-between items-center">
         {LeftBottomIcons()}
 

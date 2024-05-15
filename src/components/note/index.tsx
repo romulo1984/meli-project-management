@@ -149,7 +149,7 @@ export default function Note(props: NoteProps) {
 
         <div className="flex justify-end items-center gap-3">
           {isOwner && (
-            <div onClick={toggleEdition}>
+            <div onClick={toggleEdition} className="text-zinc-400">
               <FontAwesomeIcon icon={faEdit} />
             </div>
           )}

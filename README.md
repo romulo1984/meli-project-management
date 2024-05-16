@@ -62,6 +62,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://mercadolivre.com.br"><img src="https://avatars.githubusercontent.com/u/1641962?v=4?s=100" width="100px;" alt="Rômulo Guimarães"/><br /><sub><b>Rômulo Guimarães</b></sub></a><br /><a href="https://github.com/romulo1984/meli-project-management/commits?author=romulo1984" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://jorgeemanoel.com"><img src="https://avatars.githubusercontent.com/u/22504189?v=4?s=100" width="100px;" alt="Jorge Emanoel"/><br /><sub><b>Jorge Emanoel</b></sub></a><br /><a href="https://github.com/romulo1984/meli-project-management/commits?author=JorgeEmanoel" title="Code">💻</a></td>
     </tr>
   </tbody>

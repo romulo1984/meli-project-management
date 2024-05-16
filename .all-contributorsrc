@@ -8,10 +8,19 @@
   "commitConvention": "angular",
   "contributors": [
     {
+      "login": "romulo1984",
+      "name": "Rômulo Guimarães",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1641962?v=4",
+      "profile": "https://mercadolivre.com.br",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
       "login": "JorgeEmanoel",
       "name": "Jorge Emanoel",
       "avatar_url": "https://avatars.githubusercontent.com/u/22504189?v=4",
-      "profile": "https://jorgeemanoel.com",
+      "profile": "https://jorgeemanoel.com"
       "contributions": [
         "code"
       ]

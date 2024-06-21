@@ -23,6 +23,7 @@ interface NoteProps {
   blur?: boolean
   removeHandler?: () => void;
   likeHandler?: () => void;
+  highlighted?: boolean
 }
 
 interface NoteStructure {
@@ -153,7 +154,10 @@ export default function Note(props: NoteProps) {
   }
 
   return (
-    <div className="w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow" onDoubleClick={toggleEdition}>
+    <div
+      className={`w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow${props.highlighted ? ' highlighted' : ''}`}
+      onDoubleClick={toggleEdition}
+    >
       <div className={`mb-2 ${obfuscate ? 'blur-sm' : ''}`} >
         {!editing.value && <NoteBody note={note} users={users} obfuscate={obfuscate} />}
         {editing.value && (

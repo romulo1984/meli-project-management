@@ -35,3 +35,17 @@ body {
 .user-mention {
   @apply text-pink-400 font-medium;
 }
+
+.highlighted {
+  @apply border-2 border-indigo-400;
+}
+
+.merged-content {
+  display: block;
+  margin-top: 15px;
+  @apply border-t-2 border-indigo-200;
+}
+
+.merged-author {
+  @apply text-pink-400 font-medium;
+}

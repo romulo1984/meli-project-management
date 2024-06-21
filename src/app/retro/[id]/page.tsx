@@ -16,7 +16,10 @@ import { api } from "@convex/_generated/api";
 import { Doc, Id } from "@convex/_generated/dataModel";
 import {
   DndContext,
+  DragCancelEvent,
   DragEndEvent,
+  DragOverEvent,
+  Over,
   UniqueIdentifier,
   closestCenter,
 } from "@dnd-kit/core";
@@ -25,8 +28,10 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useMutation } from "convex/react";
-import { useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { useRef, useState } from "react";
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
 
 interface RetroProps {
   params: {
@@ -62,11 +67,15 @@ export default function Retro(props: RetroProps) {
   const RemoveNote = useMutation(api.notes.remove);
   const LikeNote = useMutation(api.notes.likeToggle);
   const UpdatePositions = useMutation(api.notes.updatePositions);
+  const UpdateNote = useMutation(api.notes.update);
   const { isSignedIn } = useUser();
   useJoinRetro({ retroId });
   const { handleSettingChange } = useSettings({
     retroId: retroId,
   })
+  const mergeOverRef = useRef(null)
+  const [mergeTarget, setMergeTarget] = useState<Over>()
+
   const getUser = (id: string) => users?.find((user) => user?._id === id);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -118,8 +127,15 @@ export default function Retro(props: RetroProps) {
     if (me) LikeNote({ noteId: id, userId: me?._id });
   };
 
+  const handleDragCancel = (event: DragCancelEvent) => {
+    mergeOverRef.current && clearTimeout(mergeOverRef.current)
+    setMergeTarget(undefined)
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { over, active } = event;
+    mergeOverRef.current && clearTimeout(mergeOverRef.current)
+    setMergeTarget(undefined)
 
     if (over && over?.id !== active?.id) {
       const items = [...active?.data?.current?.sortable?.items];
@@ -133,6 +149,60 @@ export default function Retro(props: RetroProps) {
       UpdatePositions({ notes: newItems });
     }
   };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over, active } = event;
+
+    if (!over || !active) {
+      return
+    }
+
+    if (over.id === active.id) {
+      return
+    }
+
+    mergeOverRef.current && clearTimeout(mergeOverRef.current)
+    mergeOverRef.current = setTimeout(() => {
+      setMergeTarget(over)
+      clearTimeout(mergeOverRef.current!)
+
+      confirmAlert({
+        title: 'Merge contents',
+        message: 'Do you want to merge the contents of both cards? This action is unreversible',
+        buttons: [
+          {
+            label: 'No',
+            onClick: () => null
+          },
+          {
+            label: 'Yes, merge them',
+            onClick: () => {
+              const overNote = notes?.find(n => n._id === over.id)
+              const activeNote = notes?.find(n => n._id === active.id)
+
+              const mergedBody = `
+                ${overNote?.body}
+                <div class="merged-content">
+                  ${activeNote?.body}
+
+                  <div class="merged-author">
+                    By ${activeNote?.userId}
+                  </div>
+                </div>
+              `
+              UpdateNote({
+                body: mergedBody,
+                noteId: over.id as Id<"notes">,
+                anonymous: Boolean(overNote?.anonymous)
+              })
+              RemoveNote({ id: active.id as Id<"notes"> })
+              setMergeTarget(undefined)
+            }
+          }
+        ]
+      })
+    }, 600)
+  }
 
   const settingsDropdownItems = () : DropdownItem[] => {
     const items : DropdownItem[] = []
@@ -148,7 +218,12 @@ export default function Retro(props: RetroProps) {
   }
 
   return (
-    <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
+    <DndContext
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragCancel={handleDragCancel}
+      collisionDetection={closestCenter}
+    >
       <main className="container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col">
         {isLoading ? (
           <Loading />
@@ -211,6 +286,7 @@ export default function Retro(props: RetroProps) {
                     {goodNotes?.map((note) => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
+                          highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}
                           user={getUser(note.userId)}
@@ -247,6 +323,7 @@ export default function Retro(props: RetroProps) {
                     {badNotes?.map((note) => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
+                          highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}
                           user={getUser(note.userId)}
@@ -283,6 +360,7 @@ export default function Retro(props: RetroProps) {
                     {actionNotes?.map((note) => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
+                          highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}
                           user={getUser(note.userId)}

@@ -133,3 +133,37 @@ export const updateNotesShowingStatus = mutation({
     }
   }
 })
+
+export const updateHighlightModeStatus = mutation({
+  args: { id: v.id('retros'), status: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+    const status = args.status && args.status.length > 0 ? args.status : 'enabled'
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { highlightMode: status })
+    }
+  }
+})
+
+export const updateHighlightNoteId = mutation({
+  args: { id: v.id('retros'), highlightNoteId: v.id('notes') },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { highlightNoteId: args.highlightNoteId })
+    }
+  }
+})
+
+export const removeHighlightNoteId = mutation({
+  args: { id: v.id('retros') }, 
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { highlightNoteId: undefined })
+    }
+  }
+})

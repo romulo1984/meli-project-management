@@ -8,8 +8,10 @@ type SettingsItem<T> = {
   value: T
 }
 export type NotesShowingStatus = 'showing' | 'hidden'
+export type HighlightMode = 'enabled' | 'disabled'
 export interface Settings {
   notesShowingStatus: SettingsItem<NotesShowingStatus>
+  highlightMode: SettingsItem<HighlightMode>
 }
 
 type SettingHandler = (value: string, currentState: Settings) => Settings
@@ -21,6 +23,7 @@ interface UseSettingsProps {
 const useSettings = (props: UseSettingsProps) => {
   const retroId = props.retroId
   const UpdateNotesShowingStatus = useMutation(api.retros.updateNotesShowingStatus)
+  const UpdateHighlightModeStatus = useMutation(api.retros.updateHighlightModeStatus)
   const settingToHandler = (settings : Settings, name: string) : SettingHandler => {
     const mapping = {
       [settings.notesShowingStatus.key]: (_value: string, { notesShowingStatus, ...rest} : Settings) : Settings => {
@@ -38,6 +41,21 @@ const useSettings = (props: UseSettingsProps) => {
         return {
           ...rest,
           notesShowingStatus
+        }
+      },
+      [settings.highlightMode.key]: (_value: string,  s: Settings) : Settings => {
+        const map = {
+          'enabled': 'disabled',
+          'disabled': 'enabled',
+        }
+
+        UpdateHighlightModeStatus({
+          id: retroId,
+          status: map[s.highlightMode.value]
+        })
+
+        return {
+          ...s
         }
       }
     }

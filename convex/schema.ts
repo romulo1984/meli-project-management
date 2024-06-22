@@ -25,6 +25,8 @@ export default defineSchema({
     startTimer: v.optional(v.number()),
     timerStatus: v.optional(v.string()),
     notesShowingStatus: v.optional(v.string()),
+    highlightMode: v.optional(v.string()),
+    highlightNoteId: v.optional(v.id('notes')),
   }).index('by_owner_id', ['ownerId']),
   users_retro: defineTable({
     userId: v.id('users'),

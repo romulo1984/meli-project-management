@@ -68,6 +68,8 @@ export default function Retro(props: RetroProps) {
   const LikeNote = useMutation(api.notes.likeToggle);
   const UpdatePositions = useMutation(api.notes.updatePositions);
   const UpdateNote = useMutation(api.notes.update);
+  const UpdateHighlightNoteId = useMutation(api.retros.updateHighlightNoteId);
+  const RemoveHighlightNoteId = useMutation(api.retros.removeHighlightNoteId);
   const { isSignedIn } = useUser();
   useJoinRetro({ retroId });
   const { handleSettingChange } = useSettings({
@@ -224,7 +226,34 @@ export default function Retro(props: RetroProps) {
       disabled: !isSignedIn,
     })
 
+    items.push({
+      label: settings.highlightMode.label,
+      name: settings.highlightMode.key,
+      selected: settings.highlightMode.value === 'enabled',
+      disabled: !isSignedIn,
+    })
+
     return items
+  }
+
+  const noteHoverHandler = (note: NoteItem) => {
+    if (!retro?.highlightMode || retro.highlightMode === 'disabled') return
+
+    console.log('Hover: ', { note })
+    UpdateHighlightNoteId({  id: retroId, highlightNoteId: note._id })
+  }
+
+  const noteBlurHandler = (note: NoteItem) => {
+if (!retro?.highlightMode || retro.highlightMode === 'disabled') return
+
+    RemoveHighlightNoteId({  id: retroId }) 
+  }
+
+  const shouldBlur = (note: NoteItem) => {
+    const should = settings.notesShowingStatus.value === 'hidden' ||
+      (retro?.highlightMode === 'enabled' && retro.highlightNoteId && retro.highlightNoteId !== note._id)
+
+    return should
   }
 
   return (
@@ -297,13 +326,17 @@ export default function Retro(props: RetroProps) {
                       <Sortable key={note._id} id={note._id}>
                         <Note
                           highlighted={mergeTarget?.id === note._id}
+                          superHighlighted={retro?.highlightNoteId === note._id}
                           key={note._id}
                           note={note}
                           user={getUser(note.userId)}
                           me={me}
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
-                          blur={settings.notesShowingStatus.value === 'hidden'}
+                          forceBlur={retro?.highlightMode === 'enabled'}
+                          blur={shouldBlur(note)}
+                          hoverHandler={() => noteHoverHandler(note)}
+                          blurHandler={() => noteBlurHandler(note)}
                         />
                       </Sortable>
                     ))}
@@ -334,13 +367,17 @@ export default function Retro(props: RetroProps) {
                       <Sortable key={note._id} id={note._id}>
                         <Note
                           highlighted={mergeTarget?.id === note._id}
+                          superHighlighted={retro?.highlightNoteId === note._id}
                           key={note._id}
                           note={note}
                           user={getUser(note.userId)}
                           me={me}
-                          blur={settings.notesShowingStatus.value === 'hidden'}
+                          forceBlur={retro?.highlightMode === 'enabled'}
+                          blur={shouldBlur(note)}
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
+                          hoverHandler={() => noteHoverHandler(note)}
+                          blurHandler={() => noteBlurHandler(note)}
                         />
                       </Sortable>
                     ))}
@@ -371,14 +408,18 @@ export default function Retro(props: RetroProps) {
                       <Sortable key={note._id} id={note._id}>
                         <Note
                           highlighted={mergeTarget?.id === note._id}
+                          superHighlighted={retro?.highlightNoteId === note._id}
                           key={note._id}
                           note={note}
                           user={getUser(note.userId)}
                           me={me}
                           actionType={isSignedIn}
-                          blur={settings.notesShowingStatus.value === 'hidden'}
+                          forceBlur={retro?.highlightMode === 'enabled'}
+                          blur={shouldBlur(note)}
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
+                          hoverHandler={() => noteHoverHandler(note)}
+                          blurHandler={() => noteBlurHandler(note)}
                         />
                       </Sortable>
                     ))}

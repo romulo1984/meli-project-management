@@ -13,6 +13,7 @@ export default defineSchema({
     userId: v.id('users'),
     retroId: v.id('retros'),
     anonymous: v.optional(v.boolean()),
+    merged: v.optional(v.boolean()),
     likes: v.optional(v.array(v.id('users'))),
     position: v.optional(v.number()),
     assignedTo: v.optional(v.id('users')),

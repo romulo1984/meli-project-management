@@ -37,15 +37,20 @@ body {
 }
 
 .highlighted {
-  @apply border-2 border-indigo-400;
+  @apply border-2 border-pink-400;
 }
 
 .merged-content {
   display: block;
   margin-top: 15px;
-  @apply border-t-2 border-indigo-200;
+  padding-top: 15px;
+  @apply border-t-2 border-pink-100;
 }
 
 .merged-author {
-  @apply text-pink-400 font-medium;
+  font-size: 12px;
+}
+
+.merged-author > span {
+  @apply text-pink-400;
 }

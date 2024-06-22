@@ -44,6 +44,7 @@ export default function Note(props: NoteProps) {
   })
   const [deleteIntention, setDeleteIntention] = useState(false)
   const AssigneNote = useMutation(api.notes.assigne);
+  const UnnasignNote = useMutation(api.notes.unnasign);
   const UpdateNote = useMutation(api.notes.update);
 
   const isOwner = me?._id === user?._id;
@@ -62,6 +63,10 @@ export default function Note(props: NoteProps) {
 
   const assigneHandler = (userId: Id<"users">) => {
     AssigneNote({ noteId: note._id, userId: userId });
+  };
+
+  const unnasignHandler = () => {
+    UnnasignNote({ noteId: note._id });
   };
 
   const editionHandler = (data: NoteStructure) => {
@@ -85,6 +90,7 @@ export default function Note(props: NoteProps) {
           users={users}
           selected={assignedTo}
           assigneHandler={assigneHandler}
+          unnasignHandler={unnasignHandler}
         />
       );
 
@@ -126,6 +132,8 @@ export default function Note(props: NoteProps) {
 
   const toggleEdition = () => {
     if (!isOwner) return
+    if (note.merged) return
+
     setEditing({
       value: true,
       note: {
@@ -155,6 +163,7 @@ export default function Note(props: NoteProps) {
 
   return (
     <div
+      title={note.merged ? 'This note has been merged with one or more' : ''}
       className={`w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow${props.highlighted ? ' highlighted' : ''}`}
       onDoubleClick={toggleEdition}
     >
@@ -185,7 +194,7 @@ export default function Note(props: NoteProps) {
 
         {!obfuscate && (
           <div className="flex justify-end items-center gap-3">
-            {isOwner && (
+            {isOwner && !note.merged && (
               <div onClick={toggleEdition} className="text-zinc-400">
                 <FontAwesomeIcon icon={faEdit} />
               </div>

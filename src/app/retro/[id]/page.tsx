@@ -78,6 +78,22 @@ export default function Retro(props: RetroProps) {
 
   const getUser = (id: string) => users?.find((user) => user?._id === id);
 
+  const mergeBodies = (source: string, target: string, userName: string) => {
+    const merged = `
+      ${target}
+      <div class="merged-content">
+        ${source}
+
+        <div class="merged-author">
+          By
+          <span>${userName}<span>
+        </div>
+      </div>
+    `
+    
+    return merged
+  }
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
       CreateNote({
@@ -175,24 +191,18 @@ export default function Retro(props: RetroProps) {
             onClick: () => null
           },
           {
-            label: 'Yes, merge them',
+            label: 'Yes, merge',
             onClick: () => {
-              const overNote = notes?.find(n => n._id === over.id)
-              const activeNote = notes?.find(n => n._id === active.id)
+              const overNote = notes?.find(n => n._id === over.id)!
+              const activeNote = notes?.find(n => n._id === active.id)!
+              const user = users?.find(u => u?._id === activeNote?.userId)!
 
-              const mergedBody = `
-                ${overNote?.body}
-                <div class="merged-content">
-                  ${activeNote?.body}
+              const mergedBody = mergeBodies(activeNote?.body, overNote?.body, user?.name)
 
-                  <div class="merged-author">
-                    By ${activeNote?.userId}
-                  </div>
-                </div>
-              `
               UpdateNote({
                 body: mergedBody,
                 noteId: over.id as Id<"notes">,
+                merged: true,
                 anonymous: Boolean(overNote?.anonymous)
               })
               RemoveNote({ id: active.id as Id<"notes"> })

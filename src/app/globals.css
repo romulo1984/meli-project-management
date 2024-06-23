@@ -56,16 +56,7 @@ body {
 }
 
 .super-highlighted {
-  padding: 20px;
-  padding-bottom: 30px;
-  margin: 10px -10px;
-  box-shadow: 0 0 15px #666;
-  z-index: 999;
-  position: relative;
-}
-
-.super-highlighted > .note-form {
-  font-size: 1.5em;
+  @apply outline outline-4 outline-pink-300
 }
 
 .super-highlighted > .icons-container {

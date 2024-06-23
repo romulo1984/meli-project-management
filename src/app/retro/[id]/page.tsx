@@ -249,10 +249,8 @@ if (!retro?.highlightMode || retro.highlightMode === 'disabled') return
     RemoveHighlightNoteId({  id: retroId }) 
   }
 
-  const shouldBlur = (note: NoteItem) => {
-    const should = settings.notesShowingStatus.value === 'hidden' ||
-      (retro?.highlightMode === 'enabled' && retro.highlightNoteId && retro.highlightNoteId !== note._id)
-
+  const shouldBlur = (_note: NoteItem) => {
+    const should = settings.notesShowingStatus.value === 'hidden'
     return should
   }
 

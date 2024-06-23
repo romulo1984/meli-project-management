@@ -83,6 +83,7 @@ export default function NoteForm(props: NoteFormProps) {
               }}
               rows={4}
               autoFocus
+              required
             >
               <Mention
                 trigger="@"

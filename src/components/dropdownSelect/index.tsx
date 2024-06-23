@@ -1,8 +1,8 @@
 import { Id } from "@convex/_generated/dataModel";
-import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faCaretDown, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
 interface DropdownSelectProps {
   selected: any;
@@ -27,8 +27,6 @@ export default function DropdownSelect(props: DropdownSelectProps) {
     setClicked(false);
   };
 
-  const theme = selected ? 'zinc' : 'pink'
-
   useEffect(() => {
     const handleClickOutside = (event: { target: any }) => {
       if (
@@ -48,15 +46,15 @@ export default function DropdownSelect(props: DropdownSelectProps) {
     <div className="relative" ref={ref}>
       <div className="inline-flex" role="group">
         <button
-          className={`text-${theme}-300 border-dotted border-2 border-${theme}-300 focus:ring-4 focus:outline-none font-medium rounded-lg ${selected ? 'border-r-0 rounded-r-none' : ''} text-sm px-2 py-1.5 text-center inline-block items-center hover:bg-${theme}-50`}
+          className={`${selected ? 'text-zinc-400 border-zinc-300 hover:bg-zinc-50' : 'text-pink-300 border-pink-300 hover:bg-pink-50'} border-dotted border-2 focus:ring-4 focus:outline-none font-medium rounded-lg ${selected ? 'border-r-0 rounded-r-none' : ''} text-sm px-2 py-1.5 text-center inline-block items-center`}
           type="button"
           onClick={() => setClicked(!clicked)}
         >
           {selected ? (
             <div className="flex w-40 truncate text-ellipsis items-center">
               <Image
-                width={24}
-                height={24}
+                width={14}
+                height={14}
                 className="w-6 h-6 me-2 rounded-full"
                 src={selected.avatar}
                 alt={selected.name}
@@ -66,21 +64,7 @@ export default function DropdownSelect(props: DropdownSelectProps) {
           ) : (
             <div className="flex items-center">
               Assign to a member
-              <svg
-                className="w-2.5 h-2.5 ms-3"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 10 6"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="m1 1 4 4 4-4"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faCaretDown} className="ml-4"/>
             </div>
           )}
         </button>
@@ -88,7 +72,7 @@ export default function DropdownSelect(props: DropdownSelectProps) {
           <button
             onClick={() => unnasignHandler()}
             type="button"
-            className={`text-${theme}-300 mr-4 border-dotted border-2 border-${theme}-300 rounded-l-none font-medium rounded-lg text-sm px-2 py-1.5 text-center hover:bg-${theme}-50`}>
+            className="text-zinc-300 mr-4 border-dotted border-2 border-zinc-300 rounded-l-none font-medium rounded-lg text-sm px-2 py-1.5 text-center hover:bg-zinc-50">
             <FontAwesomeIcon icon={faTimes} />
           </button>
         )}
@@ -112,8 +96,8 @@ export default function DropdownSelect(props: DropdownSelectProps) {
                 } flex items-center px-4 py-2 dark:hover:text-white`}
               >
                 <Image
-                  width={24}
-                  height={24}
+                  width={14}
+                  height={14}
                   className="w-6 h-6 me-2 rounded-full"
                   src={user.avatar}
                   alt={user.name}

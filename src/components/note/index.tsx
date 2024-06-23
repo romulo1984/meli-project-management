@@ -163,8 +163,8 @@ export default function Note(props: NoteProps) {
 
   return (
     <div
-      title={note.merged ? 'This note has been merged with one or more' : ''}
-      className={`w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow${props.highlighted ? ' highlighted' : ''}`}
+      title={note.merged ? 'This note has been merged with one or more' : note.body}
+      className={`transition-all w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow${props.highlighted ? ' highlighted' : ''}`}
       onDoubleClick={toggleEdition}
     >
       <div className={`mb-2 ${obfuscate ? 'blur-sm' : ''}`} >

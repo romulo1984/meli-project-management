@@ -37,7 +37,7 @@ body {
 }
 
 .highlighted {
-  @apply border-2 border-pink-400;
+  @apply outline outline-4 outline-pink-400;
 }
 
 .merged-content {

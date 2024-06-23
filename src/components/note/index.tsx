@@ -176,7 +176,7 @@ export default function Note(props: NoteProps) {
   return (
     <div
       title={note.merged ? 'This note has been merged with one or more' : ''}
-      className={`${props.superHighlighted ? 'super-highlighted ' : ''}transition-all w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow${props.highlighted ? ' highlighted' : ''}`}
+      className={`${props.superHighlighted ? 'super-highlighted ' : ''} transition-all w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow${props.highlighted ? ' highlighted' : ''}`}
       onDoubleClick={toggleEdition}
       onMouseEnter={mouseEnterHandler}
       onMouseLeave={mouseLeaveHandler}

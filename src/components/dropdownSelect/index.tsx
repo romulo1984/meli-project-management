@@ -2,7 +2,7 @@ import { Id } from "@convex/_generated/dataModel";
 import { faCaretDown, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Image from "next/image";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface DropdownSelectProps {
   selected: any;

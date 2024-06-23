@@ -6,7 +6,7 @@ import { api } from "@convex/_generated/api";
 import { Doc, Id } from "@convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { SyntheticEvent, useMemo, useState } from "react";
 import DropdownSelect from "../dropdownSelect";
 import { AnonymousIcon, DeleteIcon, LikeIcon, SpeakerIcon } from "../icons";
 import NoteBody from "../note-body";
@@ -21,8 +21,13 @@ interface NoteProps {
   me?: Doc<"users"> | undefined | null;
   actionType?: boolean;
   blur?: boolean
+  forceBlur?: boolean
   removeHandler?: () => void;
   likeHandler?: () => void;
+  hoverHandler?: () => void;
+  blurHandler?: () => void;
+  highlighted?: boolean
+  superHighlighted?: boolean
 }
 
 interface NoteStructure {
@@ -31,7 +36,7 @@ interface NoteStructure {
 }
 
 export default function Note(props: NoteProps) {
-  const { note, user, me, actionType, removeHandler, likeHandler, blur = false } = props;
+  const { note, user, me, actionType, removeHandler, likeHandler, blur = false, forceBlur = false } = props;
   const { users } = useRetro({ retroId: note.retroId });
   const [speaking, setSpeaking] = useState(false);
   const [editing, setEditing] = useState({
@@ -43,12 +48,13 @@ export default function Note(props: NoteProps) {
   })
   const [deleteIntention, setDeleteIntention] = useState(false)
   const AssigneNote = useMutation(api.notes.assigne);
+  const UnnasignNote = useMutation(api.notes.unnasign);
   const UpdateNote = useMutation(api.notes.update);
 
   const isOwner = me?._id === user?._id;
 
   const isAnonymous = note.anonymous !== undefined && note.anonymous === true;
-  const obfuscate = blur && !isOwner
+  const obfuscate = blur && (forceBlur || !isOwner)
 
   const randomName = useMemo(() => RandomNames(), []);
 
@@ -61,6 +67,10 @@ export default function Note(props: NoteProps) {
 
   const assigneHandler = (userId: Id<"users">) => {
     AssigneNote({ noteId: note._id, userId: userId });
+  };
+
+  const unnasignHandler = () => {
+    UnnasignNote({ noteId: note._id });
   };
 
   const editionHandler = (data: NoteStructure) => {
@@ -84,6 +94,7 @@ export default function Note(props: NoteProps) {
           users={users}
           selected={assignedTo}
           assigneHandler={assigneHandler}
+          unnasignHandler={unnasignHandler}
         />
       );
 
@@ -125,6 +136,8 @@ export default function Note(props: NoteProps) {
 
   const toggleEdition = () => {
     if (!isOwner) return
+    if (note.merged) return
+
     setEditing({
       value: true,
       note: {
@@ -152,9 +165,23 @@ export default function Note(props: NoteProps) {
     setDeleteIntention(true)
   }
 
+  const mouseEnterHandler = (e: SyntheticEvent) => {
+    props.hoverHandler && props.hoverHandler()
+  }
+
+  const mouseLeaveHandler = (e: SyntheticEvent) => {
+    props.blurHandler && props.blurHandler()
+  }
+
   return (
-    <div className="w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow" onDoubleClick={toggleEdition}>
-      <div className={`mb-2 ${obfuscate ? 'blur-sm' : ''}`} >
+    <div
+      title={note.merged ? 'This note has been merged with one or more' : ''}
+      className={`${props.superHighlighted ? 'super-highlighted ' : ''} transition-all w-full bg-white rounded-lg p-3 mb-4 text-zinc-500 text-sm shadow${props.highlighted ? ' highlighted' : ''}`}
+      onDoubleClick={toggleEdition}
+      onMouseEnter={mouseEnterHandler}
+      onMouseLeave={mouseLeaveHandler}
+    >
+      <div className={`mb-2 ${obfuscate ? 'blur-sm' : ''} note-form`} >
         {!editing.value && <NoteBody note={note} users={users} obfuscate={obfuscate} />}
         {editing.value && (
           <NoteForm
@@ -176,12 +203,12 @@ export default function Note(props: NoteProps) {
           />
         )}
       </div>
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center icons-container">
         {LeftBottomIcons()}
 
         {!obfuscate && (
           <div className="flex justify-end items-center gap-3">
-            {isOwner && (
+            {isOwner && !note.merged && (
               <div onClick={toggleEdition} className="text-zinc-400">
                 <FontAwesomeIcon icon={faEdit} />
               </div>

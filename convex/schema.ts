@@ -13,6 +13,7 @@ export default defineSchema({
     userId: v.id('users'),
     retroId: v.id('retros'),
     anonymous: v.optional(v.boolean()),
+    merged: v.optional(v.boolean()),
     likes: v.optional(v.array(v.id('users'))),
     position: v.optional(v.number()),
     assignedTo: v.optional(v.id('users')),
@@ -24,6 +25,8 @@ export default defineSchema({
     startTimer: v.optional(v.number()),
     timerStatus: v.optional(v.string()),
     notesShowingStatus: v.optional(v.string()),
+    highlightMode: v.optional(v.string()),
+    highlightNoteId: v.optional(v.id('notes')),
   }).index('by_owner_id', ['ownerId']),
   users_retro: defineTable({
     userId: v.id('users'),

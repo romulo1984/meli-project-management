@@ -3,7 +3,7 @@ import { api } from '@convex/_generated/api'
 import { Id } from '@convex/_generated/dataModel'
 import { useMutation, useQuery } from 'convex/react'
 import { useEffect, useState } from 'react'
-import { NotesShowingStatus, Settings } from './useSettings'
+import { HighlightMode, NotesShowingStatus, Settings } from './useSettings'
 
 interface useRetroProps {
   retroId: Id<'retros'>
@@ -25,6 +25,11 @@ const useRetro = (props: useRetroProps) => {
       key: 'notes_showing_status',
       label: 'Hide notes',
       value: <NotesShowingStatus>(retro?.notesShowingStatus || 'showing')
+    },
+    highlightMode: {
+      key: 'higlight_mode',
+      label: 'Highlight mode',
+      value: <HighlightMode>(String(retro?.highlightMode).length ? retro?.highlightMode : 'disabled')
     }
   }
 

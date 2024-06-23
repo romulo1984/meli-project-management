@@ -16,6 +16,7 @@ export const store = mutation({
     userId: v.id('users'),
     retroId: v.id('retros'),
     anonymous: v.optional(v.boolean()),
+    merged: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const noteId = await ctx.db.insert('notes', {
@@ -24,6 +25,7 @@ export const store = mutation({
       userId: args.userId,
       retroId: args.retroId,
       anonymous: args.anonymous || false,
+      merged: args.merged || false,
     })
     return noteId
   }
@@ -84,14 +86,35 @@ export const assigne = mutation({
   }
 })
 
-export const update = mutation({
-  args: { noteId: v.id('notes'), body: v.string(), anonymous: v.boolean() },
+export const unnasign = mutation({
+  args: { noteId: v.id('notes') },
   handler: async (ctx, args) => {
     const note = await ctx.db.get(args.noteId)
     if (note) {
-      await ctx.db.patch(note._id, { body: args.body, anonymous: args.anonymous })
+      await ctx.db.patch(note._id, { assignedTo: undefined })
       return true
     }
     return false
+  }
+})
+
+export const update = mutation({
+  args: {
+    noteId: v.id('notes'),
+    body: v.string(),
+    anonymous: v.boolean(),
+    merged: v.optional(v.boolean())
+  },
+  handler: async (ctx, args) => {
+    const note = await ctx.db.get(args.noteId)
+    if (!note) {
+      return false
+    }
+
+    await ctx.db.patch(note._id, {
+      body: args.body,
+      anonymous: args.anonymous,
+      merged: args.merged
+    })
   }
 })

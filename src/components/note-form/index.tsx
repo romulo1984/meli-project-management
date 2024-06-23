@@ -43,10 +43,10 @@ export default function NoteForm(props: NoteFormProps) {
 
   const renderSuggestion = (
     suggestion: any,
-    search: string,
-    highlightedDisplay: any,
-    index: number,
-    focused: boolean
+    _search: string,
+    _highlightedDisplay: any,
+    _index: number,
+    _focused: boolean
   ) => (
     <div className="inside-item">
       <Image
@@ -76,8 +76,14 @@ export default function NoteForm(props: NoteFormProps) {
               onChange={(e) =>
                 setNewNote?.({ ...newNote, body: e.target.value })
               }
+              onKeyDown={(e) => {
+                if (e.metaKey && e.key == "Enter") {
+                  document.getElementById('btn-note-form-submit')?.click()
+                }
+              }}
               rows={4}
               autoFocus
+              required
             >
               <Mention
                 trigger="@"
@@ -145,6 +151,7 @@ export default function NoteForm(props: NoteFormProps) {
                   </svg>
                 </button>
                 <button
+                  id="btn-note-form-submit"
                   type="submit"
                   className="bg-indigo-600 hover:bg-indigo-700 py-2 px-6 rounded-lg text-center self-end"
                 >

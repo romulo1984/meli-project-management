@@ -16,7 +16,6 @@ export const store = mutation({
     userId: v.id('users'),
     retroId: v.id('retros'),
     anonymous: v.optional(v.boolean()),
-    merged: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const noteId = await ctx.db.insert('notes', {
@@ -25,7 +24,6 @@ export const store = mutation({
       userId: args.userId,
       retroId: args.retroId,
       anonymous: args.anonymous || false,
-      merged: args.merged || false,
     })
     return noteId
   }
@@ -103,7 +101,6 @@ export const update = mutation({
     noteId: v.id('notes'),
     body: v.string(),
     anonymous: v.boolean(),
-    merged: v.optional(v.boolean())
   },
   handler: async (ctx, args) => {
     const note = await ctx.db.get(args.noteId)
@@ -114,7 +111,28 @@ export const update = mutation({
     await ctx.db.patch(note._id, {
       body: args.body,
       anonymous: args.anonymous,
-      merged: args.merged
+    })
+  }
+})
+
+export const merge = mutation({
+  args: {
+    sourceId: v.id('notes'),
+    parentId: v.id('notes'),
+  },
+  handler: async (ctx, args) => {
+    const source = await ctx.db.get(args.sourceId)
+    if (!source) {
+      return false
+    }
+
+    const parent = await ctx.db.get(args.parentId)
+    if (!parent) {
+      return false
+    }
+
+    await ctx.db.patch(source._id, {
+      mergeParentId: parent._id,
     })
   }
 })

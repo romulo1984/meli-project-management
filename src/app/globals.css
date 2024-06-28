@@ -40,17 +40,6 @@ body {
   @apply outline outline-4 outline-pink-400;
 }
 
-.merged-content {
-  display: block;
-  margin-top: 15px;
-  padding-top: 15px;
-  @apply border-t-2 border-pink-100;
-}
-
-.merged-author {
-  font-size: 12px;
-}
-
-.merged-author > span {
-  @apply text-pink-400;
+.merge-container {
+  @apply w-full mb-4 rounded-lg overflow-hidden;
 }

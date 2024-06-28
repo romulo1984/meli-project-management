@@ -29,7 +29,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useMutation, useQuery } from "convex/react";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
 
@@ -43,10 +43,29 @@ interface NoteItem extends Doc<"notes"> {
   id: UniqueIdentifier;
 }
 
+interface ParsedNoteChildren {
+  [key: string]: NoteItem[]
+}
+
+interface ParsedNotes {
+  good: NoteItem[]
+  bad: NoteItem[]
+  action: NoteItem[]
+  children: ParsedNoteChildren
+}
+
+const defaultParsedNotes: ParsedNotes = {
+  good: [],
+  bad: [],
+  action: [],
+  children: {}
+}
+
 export default function Retro(props: RetroProps) {
   const retroId = props.params.id;
   const [note, setNote] = useState({ body: "", anonymous: false });
   const [pipeline, setPipeline] = useState<"good" | "bad" | "action">("good");
+  // const [parsedNotes, setParsedNotes] = useState<ParsedNotes>(defaultParsedNotes)
   const [opened, setOpened] = useState({
     bad: false,
     good: false,
@@ -67,7 +86,7 @@ export default function Retro(props: RetroProps) {
   const RemoveNote = useMutation(api.notes.remove);
   const LikeNote = useMutation(api.notes.likeToggle);
   const UpdatePositions = useMutation(api.notes.updatePositions);
-  const UpdateNote = useMutation(api.notes.update);
+  const MergeNotes = useMutation(api.notes.merge);
   const { isSignedIn } = useUser();
   useJoinRetro({ retroId });
   const { handleSettingChange } = useSettings({
@@ -77,22 +96,6 @@ export default function Retro(props: RetroProps) {
   const [mergeTarget, setMergeTarget] = useState<Over>()
 
   const getUser = (id: string) => users?.find((user) => user?._id === id);
-
-  const mergeBodies = (source: string, target: string, userName: string) => {
-    const merged = `
-      ${target}
-      <div class="merged-content">
-        ${source}
-
-        <div class="merged-author">
-          By
-          <span>${userName}<span>
-        </div>
-      </div>
-    `
-    
-    return merged
-  }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
@@ -118,18 +121,68 @@ export default function Retro(props: RetroProps) {
     });
   };
 
-  const badNotes = notes
-    ?.filter((note) => note.pipeline === "bad")
-    .map((note): NoteItem => ({ ...note, id: note._id }))
-    .sort((a: any, b: any) => a.position - b.position);
-  const goodNotes = notes
-    ?.filter((note) => note.pipeline === "good")
-    .map((note): NoteItem => ({ ...note, id: note._id }))
-    .sort((a: any, b: any) => a.position - b.position);
-  const actionNotes = notes
-    ?.filter((note) => note.pipeline === "action")
-    .map((note): NoteItem => ({ ...note, id: note._id }))
-    .sort((a: any, b: any) => a.position - b.position);
+  const parsedNotes = useMemo(() => {
+    if (!notes) {
+      return defaultParsedNotes
+    }
+
+    let good = []
+    let bad = []
+    let action = []
+    let actionChildren = {}
+    const sortedNotes = notes?.map(n => ({ ...n, id: n._id }))
+
+    for (let currentNote of sortedNotes) {
+      const parentId = String(currentNote.mergeParentId)
+      if (parentId && parentId !== 'undefined') {
+        if (!Object.keys(actionChildren).includes(currentNote._id)) {
+          actionChildren[parentId] = [currentNote]
+          continue
+        }
+        
+        actionChildren[parentId].push(currentNote)
+        continue
+      }
+
+      if (currentNote.pipeline === 'good') {
+        good.push(currentNote)
+        continue
+      }
+
+      if (currentNote.pipeline === 'bad') {
+        bad.push(currentNote)
+        continue
+      }
+
+      if (currentNote.pipeline === 'action') {
+        action.push(currentNote)
+      }
+    }
+
+    good = good?.sort((a: any, b: any) => a.position - b.position);
+    bad = bad.sort((a: any, b: any) => a.position - b.position);
+    action= action.sort((a: any, b: any) => a.position - b.position);
+
+    return {
+      good,
+      bad,
+      action,
+      children: actionChildren,
+    }
+  }, [notes])
+
+  // const parsedNotes.bad = notes
+  //   ?.filter((note) => note.pipeline === "bad")
+  //   .map((note): NoteItem => ({ ...note, id: note._id }))
+  //   .sort((a: any, b: any) => a.position - b.position);
+  // const parsedNotes.good = notes
+  //   ?.filter((note) => note.pipeline === "good")
+  //   .map((note): NoteItem => ({ ...note, id: note._id }))
+  //   .sort((a: any, b: any) => a.position - b.position);
+  // const parsedNotes.action = notes
+  //   ?.filter((note) => note.pipeline === "action")
+  //   .map((note): NoteItem => ({ ...note, id: note._id }))
+  //   .sort((a: any, b: any) => a.position - b.position);
 
   const formatDate = (date: any) =>
     new Date(date).toLocaleDateString("en-US", {
@@ -195,17 +248,13 @@ export default function Retro(props: RetroProps) {
             onClick: () => {
               const overNote = notes?.find(n => n._id === over.id)!
               const activeNote = notes?.find(n => n._id === active.id)!
-              const user = users?.find(u => u?._id === activeNote?.userId)!
 
-              const mergedBody = mergeBodies(activeNote?.body, overNote?.body, user?.name)
-
-              UpdateNote({
-                body: mergedBody,
-                noteId: over.id as Id<"notes">,
-                merged: true,
-                anonymous: Boolean(overNote?.anonymous)
+              // merge notes
+              MergeNotes({
+                sourceId: activeNote._id,
+                parentId: overNote._id,
               })
-              RemoveNote({ id: active.id as Id<"notes"> })
+
               setMergeTarget(undefined)
             }
           }
@@ -276,7 +325,7 @@ export default function Retro(props: RetroProps) {
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
                   <h3 className="text-lg text-zinc-500 mb-4">Good</h3>
-                  <p className="text-zinc-400">{goodNotes?.length}</p>
+                  <p className="text-zinc-400">{parsedNotes.good?.length}</p>
                 </div>
                 {isSignedIn && (
                   <NoteForm
@@ -288,12 +337,12 @@ export default function Retro(props: RetroProps) {
                     users={users}
                   />
                 )}
-                {goodNotes && (
+                {parsedNotes.good && (
                   <SortableContext
-                    items={goodNotes}
+                    items={parsedNotes.good}
                     strategy={verticalListSortingStrategy}
                   >
-                    {goodNotes?.map((note) => (
+                    {parsedNotes.good?.map((note) => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
                           highlighted={mergeTarget?.id === note._id}
@@ -304,6 +353,7 @@ export default function Retro(props: RetroProps) {
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
                           blur={settings.notesShowingStatus.value === 'hidden'}
+                          childrenNotes={parsedNotes.children[note._id]}
                         />
                       </Sortable>
                     ))}
@@ -313,7 +363,7 @@ export default function Retro(props: RetroProps) {
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
                   <h3 className="text-lg text-zinc-500 mb-4">Bad</h3>
-                  <p className="text-zinc-400">{badNotes?.length}</p>
+                  <p className="text-zinc-400">{parsedNotes.bad?.length}</p>
                 </div>
                 {isSignedIn && (
                   <NoteForm
@@ -325,12 +375,12 @@ export default function Retro(props: RetroProps) {
                     users={users}
                   />
                 )}
-                {badNotes && (
+                {parsedNotes.bad && (
                   <SortableContext
-                    items={badNotes}
+                    items={parsedNotes.bad}
                     strategy={verticalListSortingStrategy}
                   >
-                    {badNotes?.map((note) => (
+                    {parsedNotes.bad?.map((note) => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
                           highlighted={mergeTarget?.id === note._id}
@@ -341,6 +391,7 @@ export default function Retro(props: RetroProps) {
                           blur={settings.notesShowingStatus.value === 'hidden'}
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
+                          childrenNotes={parsedNotes.children[note._id]}
                         />
                       </Sortable>
                     ))}
@@ -350,7 +401,7 @@ export default function Retro(props: RetroProps) {
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
                   <h3 className="text-lg text-zinc-500 mb-4">Actions</h3>
-                  <p className="text-zinc-400">{actionNotes?.length}</p>
+                  <p className="text-zinc-400">{parsedNotes.action?.length}</p>
                 </div>
                 {isSignedIn && (
                   <NoteForm
@@ -362,12 +413,12 @@ export default function Retro(props: RetroProps) {
                     users={users}
                   />
                 )}
-                {actionNotes && (
+                {parsedNotes.action && (
                   <SortableContext
-                    items={actionNotes}
+                    items={parsedNotes.action}
                     strategy={verticalListSortingStrategy}
                   >
-                    {actionNotes?.map((note) => (
+                    {parsedNotes.action?.map((note) => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
                           highlighted={mergeTarget?.id === note._id}
@@ -379,6 +430,7 @@ export default function Retro(props: RetroProps) {
                           blur={settings.notesShowingStatus.value === 'hidden'}
                           removeHandler={() => RemoveNote({ id: note._id })}
                           likeHandler={() => handleLike({ id: note._id })}
+                          childrenNotes={parsedNotes.children[note._id]}
                         />
                       </Sortable>
                     ))}

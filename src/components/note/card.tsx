@@ -16,15 +16,15 @@ import { faEdit } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 
 interface NoteProps {
-  note: Doc<"notes">;
-  user: Doc<"users"> | undefined | null;
-  me?: Doc<"users"> | undefined | null;
-  actionType?: boolean;
+  note: Doc<"notes">
+  user: Doc<"users"> | undefined | null
+  me?: Doc<"users"> | undefined | null
+  actionType?: boolean
   blur?: boolean
-  removeHandler?: () => void;
-  likeHandler?: () => void;
-  highlighted?: boolean,
+  highlighted?: boolean
   childrenNotes?: Doc<"notes">[]
+  roundTop: boolean
+  roundBottom: boolean
 }
 
 interface NoteStructure {
@@ -33,7 +33,7 @@ interface NoteStructure {
 }
 
 export default function NoteCard(props: NoteProps) {
-  const { note, user, me, actionType, removeHandler, likeHandler, blur = false } = props;
+  const { note, user, me, actionType, blur = false, roundTop, roundBottom } = props;
   const { users } = useRetro({ retroId: note.retroId });
   const [speaking, setSpeaking] = useState(false);
   const [editing, setEditing] = useState({
@@ -47,6 +47,8 @@ export default function NoteCard(props: NoteProps) {
   const AssigneNote = useMutation(api.notes.assigne);
   const UnnasignNote = useMutation(api.notes.unnasign);
   const UpdateNote = useMutation(api.notes.update);
+  const RemoveNote = useMutation(api.notes.remove);
+  const LikeNote = useMutation(api.notes.likeToggle);
 
   const isOwner = me?._id === user?._id;
 
@@ -118,7 +120,7 @@ export default function NoteCard(props: NoteProps) {
       <div>
         <Image
           alt={user?.name || ""}
-          className="w-6 h-6 rounded-full inline-block mr-2"
+          className="w-5 h-5 rounded-full inline-block mr-2"
           src={user?.avatar || ""}
           width={24}
           height={24}
@@ -143,11 +145,19 @@ export default function NoteCard(props: NoteProps) {
     })
   }
 
+  const removeHandler = () => {
+    RemoveNote({ id: note._id })
+  }
+
+  const likeHandler = () => {
+    LikeNote({ noteId: note._id, userId: me!._id })
+  }
+
   const handleIntentionalDelete = () => {
     if (!isOwner) return
 
     if (deleteIntention) {
-      removeHandler && removeHandler()
+      removeHandler();
       setDeleteIntention(false)
 
       return
@@ -161,10 +171,19 @@ export default function NoteCard(props: NoteProps) {
     setDeleteIntention(true)
   }
 
+  const containerStyle = useMemo<string>(() => {
+    const styles = []
+
+    if (roundTop) styles.push('rounded-t-lg')
+    if (roundBottom) styles.push('rounded-b-lg')
+
+    return styles.join(' ')
+  }, [roundTop, roundBottom])
+
   return (
     <div
       title={note.body}
-      className="transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow"
+      className={`transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle}`}
       onDoubleClick={toggleEdition}
     >
       <div className={`mb-2 ${obfuscate ? 'blur-sm' : ''}`} >

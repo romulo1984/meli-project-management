@@ -65,7 +65,6 @@ export default function Retro(props: RetroProps) {
   const retroId = props.params.id;
   const [note, setNote] = useState({ body: "", anonymous: false });
   const [pipeline, setPipeline] = useState<"good" | "bad" | "action">("good");
-  // const [parsedNotes, setParsedNotes] = useState<ParsedNotes>(defaultParsedNotes)
   const [opened, setOpened] = useState({
     bad: false,
     good: false,
@@ -135,7 +134,7 @@ export default function Retro(props: RetroProps) {
     for (let currentNote of sortedNotes) {
       const parentId = String(currentNote.mergeParentId)
       if (parentId && parentId !== 'undefined') {
-        if (!Object.keys(actionChildren).includes(currentNote._id)) {
+        if (!Object.keys(actionChildren).includes(parentId)) {
           actionChildren[parentId] = [currentNote]
           continue
         }
@@ -170,19 +169,6 @@ export default function Retro(props: RetroProps) {
       children: actionChildren,
     }
   }, [notes])
-
-  // const parsedNotes.bad = notes
-  //   ?.filter((note) => note.pipeline === "bad")
-  //   .map((note): NoteItem => ({ ...note, id: note._id }))
-  //   .sort((a: any, b: any) => a.position - b.position);
-  // const parsedNotes.good = notes
-  //   ?.filter((note) => note.pipeline === "good")
-  //   .map((note): NoteItem => ({ ...note, id: note._id }))
-  //   .sort((a: any, b: any) => a.position - b.position);
-  // const parsedNotes.action = notes
-  //   ?.filter((note) => note.pipeline === "action")
-  //   .map((note): NoteItem => ({ ...note, id: note._id }))
-  //   .sort((a: any, b: any) => a.position - b.position);
 
   const formatDate = (date: any) =>
     new Date(date).toLocaleDateString("en-US", {
@@ -230,9 +216,9 @@ export default function Retro(props: RetroProps) {
       return
     }
 
+    setTimeout(setMergeTarget, 300, over)
     mergeOverRef.current && clearTimeout(mergeOverRef.current)
     mergeOverRef.current = setTimeout(() => {
-      setMergeTarget(over)
       clearTimeout(mergeOverRef.current!)
 
       confirmAlert({

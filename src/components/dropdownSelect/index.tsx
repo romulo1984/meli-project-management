@@ -2,7 +2,7 @@ import { Id } from "@convex/_generated/dataModel";
 import { faCaretDown, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
 interface DropdownSelectProps {
   selected: any;
@@ -27,6 +27,19 @@ export default function DropdownSelect(props: DropdownSelectProps) {
     setClicked(false);
   };
 
+  const buttonStyle = useMemo<string>(() => {
+    const styles = []
+
+    if (selected) {
+      styles.push('text-zinc-400 border-zinc-300 hover:bg-zinc-50')
+      styles.push('border-r-0 rounded-r-none')
+    } else {
+      styles.push('text-pink-300 border-pink-300 hover:bg-pink-50')
+    }
+    
+    return styles.join(' ')
+  }, [selected])
+
   useEffect(() => {
     const handleClickOutside = (event: { target: any }) => {
       if (
@@ -46,20 +59,21 @@ export default function DropdownSelect(props: DropdownSelectProps) {
     <div className="relative" ref={ref}>
       <div className="inline-flex" role="group">
         <button
-          className={`${selected ? 'text-zinc-400 border-zinc-300 hover:bg-zinc-50' : 'text-pink-300 border-pink-300 hover:bg-pink-50'} border-dotted border-2 focus:ring-4 focus:outline-none font-medium rounded-lg ${selected ? 'border-r-0 rounded-r-none' : ''} text-sm px-2 py-1.5 text-center inline-block items-center`}
+          className={`${buttonStyle} border-dotted border-2 focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-2 py-1.5 text-center inline-block items-center`}
           type="button"
           onClick={() => setClicked(!clicked)}
         >
           {selected ? (
-            <div className="flex w-40 truncate text-ellipsis items-center">
+            <div className="flex truncate text-ellipsis items-center relative">
               <Image
                 width={14}
                 height={14}
-                className="w-6 h-6 me-2 rounded-full"
+                className="w-5 h-5 me-2 rounded-full"
                 src={selected.avatar}
                 alt={selected.name}
               />
               {selected.name}
+              <FontAwesomeIcon icon={faCaretDown} className="ml-4 float-right"/>
             </div>
           ) : (
             <div className="flex items-center">

@@ -41,5 +41,5 @@ body {
 }
 
 .merge-container {
-  @apply w-full mb-4 rounded-lg overflow-hidden;
+  @apply transition-all w-full mb-4 rounded-lg;
 }

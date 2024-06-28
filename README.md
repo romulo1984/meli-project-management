@@ -17,7 +17,7 @@ This projects uses the following technologies:
 - [convex](https://convex.dev/)
 - [clerk](https://clerk.com/)
 
-So, for you to be able to run it, it is required that you have an account on each of the platforms above.
+So, in order to run it, it is required that you have an account on each of the platforms above.
 
 ## Running
 

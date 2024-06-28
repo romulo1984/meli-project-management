@@ -91,7 +91,7 @@ export default function Retro(props: RetroProps) {
   const { handleSettingChange } = useSettings({
     retroId: retroId,
   })
-  const mergeOverRef = useRef<ReturnType<typeof setTimeout>>(null)
+  const mergeOverRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mergeTarget, setMergeTarget] = useState<Over>()
 
   const getUser = (id: string) => users?.find((user) => user?._id === id);
@@ -128,7 +128,7 @@ export default function Retro(props: RetroProps) {
     let good = []
     let bad = []
     let action = []
-    let actionChildren = {}
+    let actionChildren: ParsedNoteChildren = {}
     const sortedNotes = notes?.map(n => ({ ...n, id: n._id }))
 
     for (let currentNote of sortedNotes) {

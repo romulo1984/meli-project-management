@@ -336,8 +336,6 @@ export default function Retro(props: RetroProps) {
                           note={note}
                           user={getUser(note.userId)}
                           me={me}
-                          removeHandler={() => RemoveNote({ id: note._id })}
-                          likeHandler={() => handleLike({ id: note._id })}
                           blur={settings.notesShowingStatus.value === 'hidden'}
                           childrenNotes={parsedNotes.children[note._id]}
                         />
@@ -375,8 +373,6 @@ export default function Retro(props: RetroProps) {
                           user={getUser(note.userId)}
                           me={me}
                           blur={settings.notesShowingStatus.value === 'hidden'}
-                          removeHandler={() => RemoveNote({ id: note._id })}
-                          likeHandler={() => handleLike({ id: note._id })}
                           childrenNotes={parsedNotes.children[note._id]}
                         />
                       </Sortable>
@@ -414,8 +410,6 @@ export default function Retro(props: RetroProps) {
                           me={me}
                           actionType={isSignedIn}
                           blur={settings.notesShowingStatus.value === 'hidden'}
-                          removeHandler={() => RemoveNote({ id: note._id })}
-                          likeHandler={() => handleLike({ id: note._id })}
                           childrenNotes={parsedNotes.children[note._id]}
                         />
                       </Sortable>

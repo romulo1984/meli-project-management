@@ -91,7 +91,7 @@ export default function Retro(props: RetroProps) {
   const { handleSettingChange } = useSettings({
     retroId: retroId,
   })
-  const mergeOverRef = useRef(null)
+  const mergeOverRef = useRef<ReturnType<typeof setTimeout>>(null)
   const [mergeTarget, setMergeTarget] = useState<Over>()
 
   const getUser = (id: string) => users?.find((user) => user?._id === id);

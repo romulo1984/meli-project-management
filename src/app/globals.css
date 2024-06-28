@@ -35,3 +35,11 @@ body {
 .user-mention {
   @apply text-pink-400 font-medium;
 }
+
+.highlighted {
+  @apply outline outline-4 outline-pink-400;
+}
+
+.merge-container {
+  @apply transition-all w-full mb-4 rounded-lg;
+}

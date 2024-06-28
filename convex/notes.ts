@@ -84,14 +84,55 @@ export const assigne = mutation({
   }
 })
 
-export const update = mutation({
-  args: { noteId: v.id('notes'), body: v.string(), anonymous: v.boolean() },
+export const unnasign = mutation({
+  args: { noteId: v.id('notes') },
   handler: async (ctx, args) => {
     const note = await ctx.db.get(args.noteId)
     if (note) {
-      await ctx.db.patch(note._id, { body: args.body, anonymous: args.anonymous })
+      await ctx.db.patch(note._id, { assignedTo: undefined })
       return true
     }
     return false
+  }
+})
+
+export const update = mutation({
+  args: {
+    noteId: v.id('notes'),
+    body: v.string(),
+    anonymous: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const note = await ctx.db.get(args.noteId)
+    if (!note) {
+      return false
+    }
+
+    await ctx.db.patch(note._id, {
+      body: args.body,
+      anonymous: args.anonymous,
+    })
+  }
+})
+
+export const merge = mutation({
+  args: {
+    sourceId: v.id('notes'),
+    parentId: v.id('notes'),
+  },
+  handler: async (ctx, args) => {
+    const source = await ctx.db.get(args.sourceId)
+    if (!source) {
+      return false
+    }
+
+    const parent = await ctx.db.get(args.parentId)
+    if (!parent) {
+      return false
+    }
+
+    await ctx.db.patch(source._id, {
+      mergeParentId: parent._id,
+    })
   }
 })

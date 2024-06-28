@@ -18,7 +18,7 @@ export default function Home() {
   const CreateRetro = async () => {
     setCreatingRetro(true)
     if (!isSignedIn) {
-      router.push('/login')
+      router.push('/login?r=/new')
     } else {
       const retroId = await StoreRetro({ ownerId: user.id })
       router.push(`/retro/${retroId}`)

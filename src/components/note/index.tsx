@@ -38,6 +38,7 @@ export default function Note(props: NoteProps) {
 
       {childrenNotes && childrenNotes.length > 0 && childrenNotes.map((child, i) => (
         <NoteCard
+          key={child._id}
           note={child}
           user={user}
           me={me}

@@ -18,6 +18,7 @@ export default function Navbar() {
       <div className='flex justify-end items-center'>
         {isSignedIn ? (
           <>
+            <Link className='mr-6' href='/new'>New</Link>
             <Link className='mr-6' href='/retros'>My Retros</Link>
             <UserButton />
           </>

@@ -28,8 +28,8 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useMutation, useQuery } from "convex/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation } from "convex/react";
+import { useMemo, useRef, useState } from "react";
 import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
 
@@ -82,8 +82,6 @@ export default function Retro(props: RetroProps) {
     settings
   } = useRetro({ retroId });
   const CreateNote = useMutation(api.notes.store);
-  const RemoveNote = useMutation(api.notes.remove);
-  const LikeNote = useMutation(api.notes.likeToggle);
   const UpdatePositions = useMutation(api.notes.updatePositions);
   const MergeNotes = useMutation(api.notes.merge);
   const { isSignedIn } = useUser();
@@ -93,8 +91,6 @@ export default function Retro(props: RetroProps) {
   })
   const mergeOverRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mergeTarget, setMergeTarget] = useState<Over>()
-
-  const getUser = (id: string) => users?.find((user) => user?._id === id);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
@@ -178,10 +174,6 @@ export default function Retro(props: RetroProps) {
       day: "numeric",
     });
 
-  const handleLike = ({ id }: { id: Id<"notes"> }) => {
-    if (me) LikeNote({ noteId: id, userId: me?._id });
-  };
-
   const handleDragCancel = (event: DragCancelEvent) => {
     mergeOverRef.current && clearTimeout(mergeOverRef.current)
     setMergeTarget(undefined)
@@ -216,6 +208,13 @@ export default function Retro(props: RetroProps) {
       return
     }
 
+    const overNote = notes?.find(n => n._id === over.id)!
+    const activeNote = notes?.find(n => n._id === active.id)!
+
+    if (overNote.pipeline !== activeNote.pipeline) {
+      return
+    }
+
     setTimeout(setMergeTarget, 300, over)
     mergeOverRef.current && clearTimeout(mergeOverRef.current)
     mergeOverRef.current = setTimeout(() => {
@@ -232,10 +231,6 @@ export default function Retro(props: RetroProps) {
           {
             label: 'Yes, merge',
             onClick: () => {
-              const overNote = notes?.find(n => n._id === over.id)!
-              const activeNote = notes?.find(n => n._id === active.id)!
-
-              // merge notes
               MergeNotes({
                 sourceId: activeNote._id,
                 parentId: overNote._id,
@@ -334,7 +329,7 @@ export default function Retro(props: RetroProps) {
                           highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}
-                          user={getUser(note.userId)}
+                          users={users}
                           me={me}
                           blur={settings.notesShowingStatus.value === 'hidden'}
                           childrenNotes={parsedNotes.children[note._id]}
@@ -370,7 +365,7 @@ export default function Retro(props: RetroProps) {
                           highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}
-                          user={getUser(note.userId)}
+                          users={users}
                           me={me}
                           blur={settings.notesShowingStatus.value === 'hidden'}
                           childrenNotes={parsedNotes.children[note._id]}
@@ -406,7 +401,7 @@ export default function Retro(props: RetroProps) {
                           highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}
-                          user={getUser(note.userId)}
+                          users={users}
                           me={me}
                           actionType={isSignedIn}
                           blur={settings.notesShowingStatus.value === 'hidden'}

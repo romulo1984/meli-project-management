@@ -4,7 +4,7 @@ import NoteCard from "./card";
 
 interface NoteProps {
   note: Doc<"notes">;
-  user: Doc<"users"> | undefined | null;
+  users: Doc<"users">[] | any;
   me?: Doc<"users"> | undefined | null;
   actionType?: boolean;
   blur?: boolean
@@ -16,19 +16,21 @@ interface NoteProps {
 export default function Note(props: NoteProps) {
   const {
     note,
-    user,
     me,
     actionType,
     blur = false,
     childrenNotes = [],
-    highlighted
+    highlighted,
+    users = []
   } = props;
+
+  const getUser = (id: string) => users ? users?.find(u => u._id === id) : null
 
   return (
     <div className={`merge-container ${highlighted ? 'highlighted' : ''}`}>
       <NoteCard
         note={note}
-        user={user}
+        user={getUser(note.userId)}
         me={me}
         actionType={actionType}
         blur={blur}
@@ -40,7 +42,7 @@ export default function Note(props: NoteProps) {
         <NoteCard
           key={child._id}
           note={child}
-          user={user}
+          user={getUser(child.userId)}
           me={me}
           actionType={actionType}
           blur={blur}

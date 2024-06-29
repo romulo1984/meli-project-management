@@ -40,6 +40,13 @@ export default function DropdownSelect(props: DropdownSelectProps) {
     return styles.join(' ')
   }, [selected])
 
+  const parsedName = useMemo(() => {
+    if (!selected) return ''
+
+    const name = String(selected.name).slice(0, 10)
+    return name + '...'
+  }, [selected])
+
   useEffect(() => {
     const handleClickOutside = (event: { target: any }) => {
       if (
@@ -54,6 +61,7 @@ export default function DropdownSelect(props: DropdownSelectProps) {
       document.removeEventListener("click", handleClickOutside, true);
     };
   }, []);
+
 
   return (
     <div className="relative" ref={ref}>
@@ -72,7 +80,7 @@ export default function DropdownSelect(props: DropdownSelectProps) {
                 src={selected.avatar}
                 alt={selected.name}
               />
-              {selected.name}
+              {parsedName}
               <FontAwesomeIcon icon={faCaretDown} className="ml-4 float-right"/>
             </div>
           ) : (

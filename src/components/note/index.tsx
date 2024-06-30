@@ -24,7 +24,7 @@ export default function Note(props: NoteProps) {
     users = []
   } = props;
 
-  const getUser = (id: string) => users ? users?.find(u => u._id === id) : null
+  const getUser = (id: string) => users ? users?.find((u: Doc<"users">) => u._id === id) : null
 
   return (
     <div className={`merge-container ${highlighted ? 'highlighted' : ''}`}>

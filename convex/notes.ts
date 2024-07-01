@@ -33,7 +33,33 @@ export const remove = mutation({
   args: { id: v.id('notes') },
   handler: async (ctx, args) => {
     const note = await ctx.db.get(args.id)
-    if (note) await ctx.db.delete(note._id)
+
+    if (!note) {
+      return
+    }
+
+
+    const childrenNotes = await ctx.db.query('notes')
+      .filter((q) => q.eq(q.field('mergeParentId'), note._id))
+      .collect()
+
+    if (childrenNotes.length > 0) {
+      const firstChild = childrenNotes.shift()
+
+      if (firstChild) {
+        await ctx.db.patch(firstChild._id, {
+          mergeParentId: undefined
+        })
+
+        for (let childNote of childrenNotes) {
+          await ctx.db.patch(childNote._id, {
+            mergeParentId: firstChild?._id,
+          })
+        }
+      }
+    }
+    
+    await ctx.db.delete(note._id)
     return note
   }
 })
@@ -134,5 +160,17 @@ export const merge = mutation({
     await ctx.db.patch(source._id, {
       mergeParentId: parent._id,
     })
+
+    const childrenNotes = await ctx.db.query('notes')
+      .filter((q) => q.eq(q.field('mergeParentId'), source._id))
+      .collect()
+
+    if (childrenNotes.length > 0) {
+      for (let childNote of childrenNotes) {
+        await ctx.db.patch(childNote._id, {
+          mergeParentId: parent._id,
+        })
+      }
+    }
   }
 })

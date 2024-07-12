@@ -1,5 +1,10 @@
-'use client'
-import { RedirectToSignIn, SignedIn, SignedOut, UserProfile } from '@clerk/clerk-react'
+"use client";
+import {
+  RedirectToSignIn,
+  SignedIn,
+  SignedOut,
+  UserProfile,
+} from "@clerk/nextjs";
 
 export default function Login() {
   return (
@@ -11,5 +16,5 @@ export default function Login() {
         <RedirectToSignIn />
       </SignedOut>
     </main>
-  )
+  );
 }

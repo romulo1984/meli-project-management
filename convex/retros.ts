@@ -19,7 +19,7 @@ export const get = query({
       .query('users_retro')
       .withIndex('by_retro_id', (q) => q.eq('retroId', args.id))
       .collect()
-    
+
     const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
 
     return {
@@ -43,29 +43,29 @@ export const myRetros = query({
       )
       .collect()
 
-      return asyncMap(usersRetro, async (userRetro) => {
-        const retro = await ctx.db.get(userRetro.retroId)
-        let users: Doc<'users_retro'>[] = []
-        
-        if (retro) {
-          users = await ctx.db
-            .query('users_retro')
-            .withIndex('by_retro_id', (q) =>
-              q.eq('retroId', retro._id)
-            )
-            .collect()
-        }
+    return asyncMap(usersRetro, async (userRetro) => {
+      const retro = await ctx.db.get(userRetro.retroId)
+      let users: Doc<'users_retro'>[] = []
 
-        const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
+      if (retro) {
+        users = await ctx.db
+          .query('users_retro')
+          .withIndex('by_retro_id', (q) =>
+            q.eq('retroId', retro._id)
+          )
+          .collect()
+      }
 
-        return {
-          ...retro,
-          owner,
-          users: await asyncMap(users, (user) => {
-            return ctx.db.get(user.userId)
-          })
-        }
-      })
+      const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
+
+      return {
+        ...retro,
+        owner,
+        users: await asyncMap(users, (user) => {
+          return ctx.db.get(user.userId)
+        })
+      }
+    })
   }
 })
 
@@ -133,3 +133,38 @@ export const updateNotesShowingStatus = mutation({
     }
   }
 })
+
+export const updateHighlightModeStatus = mutation({
+  args: { id: v.id('retros'), status: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+    const status = args.status && args.status.length > 0 ? args.status : 'enabled'
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { highlightMode: status })
+    }
+  }
+})
+
+export const updateHighlightNoteId = mutation({
+  args: { id: v.id('retros'), highlightNoteId: v.id('notes') },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { highlightNoteId: args.highlightNoteId })
+    }
+  }
+})
+
+export const removeHighlightNoteId = mutation({
+  args: { id: v.id('retros') },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { highlightNoteId: undefined })
+    }
+  }
+})
+

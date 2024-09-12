@@ -16,34 +16,47 @@ import { faEdit } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
 
 interface NoteProps {
-  note: Doc<"notes">
-  user: Doc<"users"> | undefined | null
-  me?: Doc<"users"> | undefined | null
-  actionType?: boolean
-  blur?: boolean
-  highlighted?: boolean
-  childrenNotes?: Doc<"notes">[]
-  roundTop: boolean
-  roundBottom: boolean
+  note: Doc<"notes">;
+  user: Doc<"users"> | undefined | null;
+  me?: Doc<"users"> | undefined | null;
+  actionType?: boolean;
+  blur?: boolean;
+  forceBlur?: boolean;
+  superHighlighted?: boolean;
+  childrenNotes?: Doc<"notes">[];
+  roundTop: boolean;
+  roundBottom: boolean;
+  hoverHandler?: () => void;
+  blurHandler?: () => void;
 }
 
 interface NoteStructure {
-  body: string
-  anonymous: boolean
+  body: string;
+  anonymous: boolean;
 }
 
 export default function NoteCard(props: NoteProps) {
-  const { note, user, me, actionType, blur = false, roundTop, roundBottom } = props;
+  const {
+    note,
+    user,
+    me,
+    actionType,
+    blur = false,
+    forceBlur = false,
+    roundTop,
+    roundBottom,
+    superHighlighted,
+  } = props;
   const { users } = useRetro({ retroId: note.retroId });
   const [speaking, setSpeaking] = useState(false);
   const [editing, setEditing] = useState({
     value: false,
     note: {
       body: note.body,
-      anonymous: Boolean(note.anonymous)
-    }
-  })
-  const [deleteIntention, setDeleteIntention] = useState(false)
+      anonymous: Boolean(note.anonymous),
+    },
+  });
+  const [deleteIntention, setDeleteIntention] = useState(false);
   const AssigneNote = useMutation(api.notes.assigne);
   const UnnasignNote = useMutation(api.notes.unnasign);
   const UpdateNote = useMutation(api.notes.update);
@@ -53,7 +66,7 @@ export default function NoteCard(props: NoteProps) {
   const isOwner = me?._id === user?._id;
 
   const isAnonymous = note.anonymous !== undefined && note.anonymous === true;
-  const obfuscate = blur && !isOwner
+  const obfuscate = (blur && !isOwner) || forceBlur;
 
   const randomName = useMemo(() => RandomNames(), []);
 
@@ -73,13 +86,13 @@ export default function NoteCard(props: NoteProps) {
   };
 
   const editionHandler = (data: NoteStructure) => {
-    if (!isOwner) return
+    if (!isOwner) return;
     UpdateNote({
       noteId: note._id,
       anonymous: data.anonymous,
       body: data.body,
-    })
-  }
+    });
+  };
 
   const assignedTo = users?.find((u) => u?._id === note.assignedTo);
 
@@ -132,77 +145,95 @@ export default function NoteCard(props: NoteProps) {
     );
   };
 
-
   const toggleEdition = () => {
-    if (!isOwner) return
+    if (!isOwner) return;
 
     setEditing({
       value: true,
       note: {
         body: note.body,
         anonymous: Boolean(note.anonymous),
-      }
-    })
-  }
+      },
+    });
+  };
 
   const removeHandler = () => {
-    RemoveNote({ id: note._id })
-  }
+    RemoveNote({ id: note._id });
+  };
 
   const likeHandler = () => {
-    LikeNote({ noteId: note._id, userId: me!._id })
-  }
+    LikeNote({ noteId: note._id, userId: me!._id });
+  };
 
   const handleIntentionalDelete = () => {
-    if (!isOwner) return
+    if (!isOwner) return;
 
     if (deleteIntention) {
       removeHandler();
-      setDeleteIntention(false)
+      setDeleteIntention(false);
 
-      return
+      return;
     }
 
-    const delay = 4000
-    toast.error('Please, click one more time to confirm the delete action', {
-      autoClose: delay
-    })
-    setTimeout(setDeleteIntention, delay, false)
-    setDeleteIntention(true)
-  }
+    const delay = 4000;
+    toast.error("Please, click one more time to confirm the delete action", {
+      autoClose: delay,
+    });
+    setTimeout(setDeleteIntention, delay, false);
+    setDeleteIntention(true);
+  };
 
   const containerStyle = useMemo<string>(() => {
-    const styles = []
+    const styles = [];
 
-    if (roundTop) styles.push('rounded-t-lg')
-    if (roundBottom) styles.push('rounded-b-lg')
+    if (roundTop) styles.push("rounded-t-lg");
+    if (roundBottom) styles.push("rounded-b-lg");
+    if (superHighlighted) styles.push("super-highlighted");
 
-    return styles.join(' ')
-  }, [roundTop, roundBottom])
+    return styles.join(" ");
+  }, [roundTop, roundBottom, superHighlighted]);
+
+  const mouseEnterHandler = (e: SyntheticEvent) => {
+    props.hoverHandler && props.hoverHandler();
+  };
+
+  const mouseLeaveHandler = (e: SyntheticEvent) => {
+    props.blurHandler && props.blurHandler();
+  };
+
+  console.count(`${note._id} ${superHighlighted}`);
 
   return (
     <div
       title={note.body}
       className={`transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle}`}
       onDoubleClick={toggleEdition}
+      onMouseEnter={mouseEnterHandler}
+      onMouseLeave={mouseLeaveHandler}
     >
-      <div className={`mb-2 ${obfuscate ? 'blur-sm' : ''}`} >
-        {!editing.value && <NoteBody note={note} users={users} obfuscate={obfuscate} />}
+      <div className={`mb-2 ${obfuscate ? "blur-sm" : ""}`}>
+        {!editing.value && (
+          <NoteBody note={note} users={users} obfuscate={obfuscate} />
+        )}
         {editing.value && (
           <NoteForm
             opened={editing.value}
-            toggleOpened={() => setEditing(old => ({
-              ...old,
-              value: false,
-            }))}
+            toggleOpened={() =>
+              setEditing((old) => ({
+                ...old,
+                value: false,
+              }))
+            }
             newNote={editing.note}
-            setNewNote={(newNote) => setEditing(old => ({
-              ...old,
-              note:  newNote
-            }))}
+            setNewNote={(newNote) =>
+              setEditing((old) => ({
+                ...old,
+                note: newNote,
+              }))
+            }
             saveHandler={(_: React.FormEvent<HTMLFormElement>) => {
-              editionHandler(editing.note)
-              setEditing(old => ({ ...old, value: false }))
+              editionHandler(editing.note);
+              setEditing((old) => ({ ...old, value: false }));
             }}
             users={users}
           />
@@ -231,8 +262,11 @@ export default function NoteCard(props: NoteProps) {
               <SpeakerIcon speaking={speaking} />
             </div>
             {isOwner && (
-              <div onClick={handleIntentionalDelete} title="Click twice to delete this card">
-                <DeleteIcon fill={deleteIntention ? 'red-500' : 'zinc-400'} />
+              <div
+                onClick={handleIntentionalDelete}
+                title="Click twice to delete this card"
+              >
+                <DeleteIcon fill={deleteIntention ? "red-500" : "zinc-400"} />
               </div>
             )}
           </div>

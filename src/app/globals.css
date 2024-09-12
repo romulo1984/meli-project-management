@@ -29,7 +29,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-smoothing: antialiased;
   -webkit-font-smoothing: antialiased;
-  text-shadow: rgba(0, 0, 0, .01) 0 0 1px;
+  text-shadow: rgba(0, 0, 0, 0.01) 0 0 1px;
 }
 
 .user-mention {
@@ -42,4 +42,8 @@ body {
 
 .merge-container {
   @apply transition-all w-full mb-4 rounded-lg;
+}
+
+.super-highlighted {
+  @apply outline outline-4 outline-pink-300;
 }

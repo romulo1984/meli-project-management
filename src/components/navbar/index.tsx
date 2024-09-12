@@ -18,13 +18,16 @@ export default function Navbar() {
       <div className="flex justify-end items-center">
         {isSignedIn ? (
           <>
-            <Link className="mr-6" href="/retros">
+            <Link className="mr-6 text-slate-600" href="/new">
+              New
+            </Link>
+            <Link className="mr-6 text-slate-600" href="/retros">
               My Retros
             </Link>
             <UserButton />
           </>
         ) : (
-          <SignInButton mode="modal" />
+          <SignInButton mode="modal" className="text-slate-600" />
         )}
       </div>
     </nav>

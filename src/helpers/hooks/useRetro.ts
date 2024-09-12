@@ -26,6 +26,15 @@ const useRetro = (props: useRetroProps) => {
       label: "Hide notes",
       value: <NotesShowingStatus>(retro?.notesShowingStatus || "showing"),
     },
+    highlightMode: {
+      key: "higlight_mode",
+      label: "Highlight mode",
+      value: <HighlightMode>(
+        (String(retro?.highlightMode).length
+          ? retro?.highlightMode
+          : "disabled")
+      ),
+    },
   };
 
   const setTimer = (timer: number) => UpdateTimer({ id: retroId, timer });

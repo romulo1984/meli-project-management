@@ -84,6 +84,8 @@ export default function Retro(props: RetroProps) {
   const CreateNote = useMutation(api.notes.store);
   const UpdatePositions = useMutation(api.notes.updatePositions);
   const MergeNotes = useMutation(api.notes.merge);
+  const UpdateHighlightNoteId = useMutation(api.retros.updateHighlightNoteId);
+  const RemoveHighlightNoteId = useMutation(api.retros.removeHighlightNoteId);
   const { isSignedIn } = useUser();
   useJoinRetro({ retroId });
   const { handleSettingChange } = useSettings({
@@ -190,7 +192,7 @@ export default function Retro(props: RetroProps) {
       const newIndex = items.indexOf(over.id);
 
       const newItems = arrayMove(items, oldIndex, newIndex).map(
-        (id, index) => ({ id, position: index })
+        (id, index) => ({ id, position: index }),
       );
 
       UpdatePositions({ notes: newItems });
@@ -245,6 +247,16 @@ export default function Retro(props: RetroProps) {
     }, 600);
   };
 
+  const noteHoverHandler = (note: NoteItem) => {
+    if (!retro?.highlightMode || retro.highlightMode === "disabled") return;
+    UpdateHighlightNoteId({ id: retroId, highlightNoteId: note._id });
+  };
+
+  const noteBlurHandler = (note: NoteItem) => {
+    if (!retro?.highlightMode || retro.highlightMode === "disabled") return;
+    RemoveHighlightNoteId({ id: retroId });
+  };
+
   const settingsDropdownItems = (): DropdownItem[] => {
     const items: DropdownItem[] = [];
 
@@ -255,8 +267,32 @@ export default function Retro(props: RetroProps) {
       disabled: !isSignedIn,
     });
 
+    items.push({
+      label: settings.highlightMode.label,
+      name: settings.highlightMode.key,
+      selected: settings.highlightMode.value === "enabled",
+      disabled: !isSignedIn,
+    });
+
     return items;
   };
+
+  const renderSortableNote = (note) => (
+    <Sortable key={note._id} id={note._id}>
+      <Note
+        highlighted={mergeTarget?.id === note._id}
+        retroHighlightNoteId={retro?.highlightNoteId}
+        hoverHandler={noteHoverHandler}
+        blurHandler={noteBlurHandler}
+        key={note._id}
+        note={note}
+        users={users}
+        me={me}
+        blur={settings.notesShowingStatus.value === "hidden"}
+        childrenNotes={parsedNotes.children[note._id]}
+      />
+    </Sortable>
+  );
 
   return (
     <DndContext
@@ -324,19 +360,7 @@ export default function Retro(props: RetroProps) {
                     items={parsedNotes.good}
                     strategy={verticalListSortingStrategy}
                   >
-                    {parsedNotes.good?.map((note) => (
-                      <Sortable key={note._id} id={note._id}>
-                        <Note
-                          highlighted={mergeTarget?.id === note._id}
-                          key={note._id}
-                          note={note}
-                          users={users}
-                          me={me}
-                          blur={settings.notesShowingStatus.value === "hidden"}
-                          childrenNotes={parsedNotes.children[note._id]}
-                        />
-                      </Sortable>
-                    ))}
+                    {parsedNotes.good?.map(renderSortableNote)}
                   </SortableContext>
                 )}
               </div>
@@ -360,19 +384,7 @@ export default function Retro(props: RetroProps) {
                     items={parsedNotes.bad}
                     strategy={verticalListSortingStrategy}
                   >
-                    {parsedNotes.bad?.map((note) => (
-                      <Sortable key={note._id} id={note._id}>
-                        <Note
-                          highlighted={mergeTarget?.id === note._id}
-                          key={note._id}
-                          note={note}
-                          users={users}
-                          me={me}
-                          blur={settings.notesShowingStatus.value === "hidden"}
-                          childrenNotes={parsedNotes.children[note._id]}
-                        />
-                      </Sortable>
-                    ))}
+                    {parsedNotes.bad?.map(renderSortableNote)}
                   </SortableContext>
                 )}
               </div>
@@ -396,20 +408,7 @@ export default function Retro(props: RetroProps) {
                     items={parsedNotes.action}
                     strategy={verticalListSortingStrategy}
                   >
-                    {parsedNotes.action?.map((note) => (
-                      <Sortable key={note._id} id={note._id}>
-                        <Note
-                          highlighted={mergeTarget?.id === note._id}
-                          key={note._id}
-                          note={note}
-                          users={users}
-                          me={me}
-                          actionType={isSignedIn}
-                          blur={settings.notesShowingStatus.value === "hidden"}
-                          childrenNotes={parsedNotes.children[note._id]}
-                        />
-                      </Sortable>
-                    ))}
+                    {parsedNotes.action?.map(renderSortableNote)}
                   </SortableContext>
                 )}
               </div>

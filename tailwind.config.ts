@@ -15,6 +15,7 @@ const config: Config = {
       },
     },
   },
+  safelist: ['w-8', 'w-6', 'w-4', 'h-8', 'h-6', 'h-4'],
   plugins: [],
 }
 export default config

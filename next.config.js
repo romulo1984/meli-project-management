@@ -5,11 +5,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'img.clerk.com',
-        port: ''
+        port: '',
       },
     ],
   },
-  swcMinify: false
+  swcMinify: false,
 }
 
 module.exports = nextConfig

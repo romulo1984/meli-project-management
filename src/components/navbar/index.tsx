@@ -27,7 +27,9 @@ export default function Navbar() {
             <UserButton />
           </>
         ) : (
-          <SignInButton mode="modal" className="text-slate-600" />
+          <div className="text-slate-600">
+            <SignInButton mode="modal" />
+          </div>
         )}
       </div>
     </nav>

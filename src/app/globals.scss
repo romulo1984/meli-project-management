@@ -56,17 +56,33 @@ body {
 }
 
 // Primereact override
-.p-confirm-popup-footer {
-  @apply flex justify-end gap-2;
+.p-confirm-popup {
+  @apply text-sm;
 
-  .p-button {
-    @apply rounded-md px-4 py-1 focus:ring-4 focus:ring-blue-300;
-  }
-  .p-confirm-popup-accept {
-    @apply text-slate-100 bg-indigo-600 hover:bg-indigo-400 disabled:bg-indigo-300;
-  }
+  .p-confirm-popup-footer {
+    @apply flex justify-end gap-2;
 
-  .p-confirm-popup-reject {
-    @apply hover:bg-slate-300 disabled:bg-slate-200;
+    .p-button {
+      @apply rounded-md px-4 py-1 focus:ring-4 focus:ring-blue-300;
+    }
+    .p-confirm-popup-accept {
+      @apply text-slate-100 bg-indigo-600 hover:bg-indigo-400 disabled:bg-indigo-300;
+    }
+
+    .p-confirm-popup-reject {
+      @apply hover:bg-slate-300 disabled:bg-slate-200;
+    }
+  }
+}
+
+.p-contextmenu {
+  @apply text-sm w-40;
+
+  .p-menuitem {
+    > .p-menuitem-content {
+      .p-menuitem-link {
+        @apply px-3 py-2;
+      }
+    }
   }
 }

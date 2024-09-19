@@ -9,6 +9,12 @@ import { api } from "@convex/_generated/api";
 import lootieAnimation from "../animations/animation.json";
 import Button from "@/components/button";
 
+let window: any = global;
+
+const mountRedirectUrl = (path: string) => {
+  return `${window.location.protocol}//${window.location.host}/${path}`;
+};
+
 export default function Home() {
   const [creatingRetro, setCreatingRetro] = useState(false);
   const { isSignedIn, user } = useUser();
@@ -18,7 +24,7 @@ export default function Home() {
   const CreateRetro = async () => {
     setCreatingRetro(true);
     if (!isSignedIn) {
-      router.push("/login");
+      router.push(`/sign-in?redirect_url=${mountRedirectUrl("new")}`);
     } else {
       const retroId = await StoreRetro({ ownerId: user.id });
       router.push(`/retro/${retroId}`);

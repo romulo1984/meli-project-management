@@ -1,7 +1,16 @@
+'use client'
 import { useState } from 'react'
-const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
-export default function useVoiceToText () {
+let window: any = {}
+
+if (typeof window !== 'undefined') {
+  window = window
+}
+
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition
+
+export default function useVoiceToText() {
   const [text, setText] = useState('')
   const [recognizing, setRecognizing] = useState(false)
 
@@ -20,6 +29,6 @@ export default function useVoiceToText () {
   return {
     text,
     recognizing,
-    startRecognition
+    startRecognition,
   }
 }

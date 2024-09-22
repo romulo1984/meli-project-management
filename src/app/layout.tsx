@@ -1,4 +1,4 @@
-import "./globals.css";
+import "./globals.scss";
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import ConvexClientProvider from "../contexts/ConvexClientProvider";

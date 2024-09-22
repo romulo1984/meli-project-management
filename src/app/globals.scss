@@ -1,0 +1,88 @@
+@layer tailwind-base, primereact, tailwind-utilities;
+
+/* IMPORTANT: In "styled" mode you must add the PrimeReact Theme here. Do NOT include in "unstyled" mode */
+@import 'primereact/resources/themes/lara-light-blue/theme.css';
+@import 'primeicons/primeicons.css';
+
+@layer tailwind-base {
+  @tailwind base;
+}
+
+@layer tailwind-utilities {
+  @tailwind components;
+  @tailwind utilities;
+}
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  /* Adjust font size */
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  /* Font variant */
+  font-variant-ligatures: none;
+  -webkit-font-variant-ligatures: none;
+  /* Smoothing */
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased;
+  text-shadow: rgba(0, 0, 0, .01) 0 0 1px;
+}
+
+.user-mention {
+  @apply text-pink-400 font-medium;
+}
+
+.highlighted {
+  @apply outline outline-4 outline-pink-400;
+}
+
+.merge-container {
+  @apply transition-all w-full mb-4 rounded-lg;
+}
+
+// Primereact override
+.p-confirm-popup {
+  @apply text-sm;
+
+  .p-confirm-popup-footer {
+    @apply flex justify-end gap-2;
+
+    .p-button {
+      @apply rounded-md px-4 py-1 focus:ring-4 focus:ring-blue-300;
+    }
+    .p-confirm-popup-accept {
+      @apply text-slate-100 bg-indigo-600 hover:bg-indigo-400 disabled:bg-indigo-300;
+    }
+
+    .p-confirm-popup-reject {
+      @apply hover:bg-slate-300 disabled:bg-slate-200;
+    }
+  }
+}
+
+.p-contextmenu {
+  @apply text-sm w-40;
+
+  .p-menuitem {
+    > .p-menuitem-content {
+      .p-menuitem-link {
+        @apply px-3 py-2;
+      }
+    }
+  }
+}

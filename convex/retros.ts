@@ -13,24 +13,24 @@ export const get = query({
     const retro = await ctx.db.get(args.id)
     const notes = await ctx.db
       .query('notes')
-      .withIndex('by_retro_id', (q) => q.eq('retroId', args.id))
+      .withIndex('by_retro_id', q => q.eq('retroId', args.id))
       .collect()
     const usersRetro = await ctx.db
       .query('users_retro')
-      .withIndex('by_retro_id', (q) => q.eq('retroId', args.id))
+      .withIndex('by_retro_id', q => q.eq('retroId', args.id))
       .collect()
-    
+
     const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
 
     return {
       ...retro,
       owner,
       notes,
-      users: await asyncMap(usersRetro, (user) => {
+      users: await asyncMap(usersRetro, user => {
         return ctx.db.get(user.userId)
-      })
+      }),
     }
-  }
+  },
 })
 
 export const myRetros = query({
@@ -38,35 +38,31 @@ export const myRetros = query({
   handler: async (ctx, args) => {
     const usersRetro = await ctx.db
       .query('users_retro')
-      .withIndex('by_user_id', (q) =>
-        q.eq('userId', args.userId)
-      )
+      .withIndex('by_user_id', q => q.eq('userId', args.userId))
       .collect()
 
-      return asyncMap(usersRetro, async (userRetro) => {
-        const retro = await ctx.db.get(userRetro.retroId)
-        let users: Doc<'users_retro'>[] = []
-        
-        if (retro) {
-          users = await ctx.db
-            .query('users_retro')
-            .withIndex('by_retro_id', (q) =>
-              q.eq('retroId', retro._id)
-            )
-            .collect()
-        }
+    return asyncMap(usersRetro, async userRetro => {
+      const retro = await ctx.db.get(userRetro.retroId)
+      let users: Doc<'users_retro'>[] = []
 
-        const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
+      if (retro) {
+        users = await ctx.db
+          .query('users_retro')
+          .withIndex('by_retro_id', q => q.eq('retroId', retro._id))
+          .collect()
+      }
 
-        return {
-          ...retro,
-          owner,
-          users: await asyncMap(users, (user) => {
-            return ctx.db.get(user.userId)
-          })
-        }
-      })
-  }
+      const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
+
+      return {
+        ...retro,
+        owner,
+        users: await asyncMap(users, user => {
+          return ctx.db.get(user.userId)
+        }),
+      }
+    })
+  },
 })
 
 export const store = mutation({
@@ -74,9 +70,7 @@ export const store = mutation({
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query('users')
-      .withIndex('by_token', (q) =>
-        q.eq('tokenIdentifier', args.ownerId)
-      )
+      .withIndex('by_token', q => q.eq('tokenIdentifier', args.ownerId))
       .unique()
 
     const payload = {
@@ -93,7 +87,7 @@ export const store = mutation({
     })
 
     return retroId
-  }
+  },
 })
 
 export const update = mutation({
@@ -104,7 +98,7 @@ export const update = mutation({
     if (retro) {
       await ctx.db.patch(retro._id, { name: args.name })
     }
-  }
+  },
 })
 
 export const updateTimer = mutation({
@@ -120,7 +114,7 @@ export const updateTimer = mutation({
     if (retro) {
       await ctx.db.patch(retro._id, args)
     }
-  }
+  },
 })
 
 export const updateNotesShowingStatus = mutation({
@@ -131,5 +125,16 @@ export const updateNotesShowingStatus = mutation({
     if (retro) {
       await ctx.db.patch(retro._id, { notesShowingStatus: args.status })
     }
-  }
+  },
+})
+
+export const updateStatus = mutation({
+  args: { id: v.id('retros'), status: v.string() },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { status: args.status })
+    }
+  },
 })

@@ -7,7 +7,7 @@ This project is a retrospective tool, which allows you to create boards to be us
 
 ## Installation
 
-In order to run this project, you gotta make sure the dependences are correctly installed:
+In order to run this project, you have to install the dependencies:
 ```shell
 npm ci
 ```

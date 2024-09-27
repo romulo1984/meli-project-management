@@ -1,8 +1,9 @@
-import Link from 'next/link'
+import React from 'react'
 import Participants from '@/components/participants'
 import { Button } from '@/components/ui/button'
-import { faTrash } from '@fortawesome/free-solid-svg-icons'
+import { IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import Link from 'next/link'
 import {
   Card,
   CardDescription,
@@ -11,32 +12,49 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Doc, Id } from '@convex/_generated/dataModel'
-import React from 'react'
+
+type Action = {
+  text: string
+  onClick: () => void
+  show?: boolean
+  icon?: IconDefinition
+  href?: string
+  variant?:
+    | 'link'
+    | 'secondary'
+    | 'outline'
+    | 'default'
+    | 'destructive'
+    | 'ghost'
+    | null
+    | undefined
+}
 
 interface RetroCardProps extends React.HTMLAttributes<HTMLDivElement> {
   retro: Doc<'retros'> | any
-  handleClick: (retroId: Id<'retros'> | undefined) => void
   isOwner: (retro: Doc<'retros'>) => boolean
-  formatDate: (date: any) => string
-  secondaryActionText: string
+  actions: Action[]
 }
 
+const formatDate = (date: any) =>
+  new Date(date).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
 export default function RetroCard(props: RetroCardProps) {
-  const {
-    retro,
-    handleClick,
-    isOwner,
-    formatDate,
-    secondaryActionText,
-    ...rest
-  } = props
+  const { retro, isOwner, actions, ...rest } = props
 
   return (
     <Card {...rest}>
       <CardHeader>
         <div className="flex justify-between gap-x-6">
           <div>
-            <CardTitle className="mb-1">{retro?.name}</CardTitle>
+            <Link href={`/retro/${retro?._id}`}>
+              <CardTitle className="mb-1">{retro?.name}</CardTitle>
+            </Link>
             <CardDescription>
               Created by {retro?.owner?.name ?? ''}
               {isOwner(retro) && ' (you)'}{' '}
@@ -51,16 +69,18 @@ export default function RetroCard(props: RetroCardProps) {
         </div>
       </CardHeader>
       <CardFooter className="flex gap-4">
-        <Link href={`/retro/${retro?._id}`}>
-          <Button variant="outline">Open retro</Button>
-        </Link>
-
-        {isOwner(retro) && (
-          <Button variant="secondary" onClick={() => handleClick(retro?._id)}>
-            <FontAwesomeIcon icon={faTrash} className="mr-2 h-4 w-4" />
-            {secondaryActionText}
-          </Button>
-        )}
+        {actions
+          ?.filter(({ show = true }) => show)
+          ?.map(({ text, variant, icon, onClick }, index) => (
+            <Button
+              key={index}
+              variant={variant ?? 'outline'}
+              onClick={onClick}
+            >
+              {icon && <FontAwesomeIcon icon={icon} className="mr-2 h-4 w-4" />}
+              {text}
+            </Button>
+          ))}
       </CardFooter>
     </Card>
   )

@@ -5,22 +5,18 @@ import Loading from '@/components/loading'
 import { api } from '@convex/_generated/api'
 import { useMutation } from 'convex/react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { faTrash, faRotateLeft } from '@fortawesome/free-solid-svg-icons'
 
 import { Doc, Id } from '@convex/_generated/dataModel'
-import RetroCard from '@/components/repo-card'
+import RetroCard from '@/components/retro-card'
+import { useRouter } from 'next/navigation'
 
 export default function Retros() {
+  const router = useRouter()
   const { retros, isLoading, me } = useMyRetros()
   const ArchiveRetro = useMutation(api.retros.updateStatus)
 
   const isOwner = (retro: any) => retro?.ownerId === me?._id
-  const formatDate = (date: any) =>
-    new Date(date).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
 
   const handleArchiveClick = (retroId: Id<'retros'> | undefined) => {
     if (retroId) {
@@ -61,10 +57,20 @@ export default function Retros() {
                 <RetroCard
                   key={retro._id}
                   retro={retro as Doc<'retros'> | any}
-                  handleClick={handleArchiveClick}
-                  secondaryActionText="Archive"
                   isOwner={isOwner}
-                  formatDate={formatDate}
+                  actions={[
+                    {
+                      text: 'Open Retro',
+                      onClick: () => router.push(`/retro/${retro._id}`),
+                    },
+                    {
+                      text: 'Archive',
+                      show: isOwner(retro),
+                      onClick: () => handleArchiveClick(retro._id),
+                      variant: 'secondary',
+                      icon: faTrash,
+                    },
+                  ]}
                 />
               ))
             ) : (
@@ -79,10 +85,20 @@ export default function Retros() {
                 <RetroCard
                   key={retro._id}
                   retro={retro as Doc<'retros'> | any}
-                  handleClick={handleActiveClick}
-                  secondaryActionText="Activate"
                   isOwner={isOwner}
-                  formatDate={formatDate}
+                  actions={[
+                    {
+                      text: 'Open Retro',
+                      onClick: () => router.push(`/retro/${retro._id}`),
+                    },
+                    {
+                      text: 'Restore',
+                      show: isOwner(retro),
+                      onClick: () => handleActiveClick(retro._id),
+                      variant: 'secondary',
+                      icon: faRotateLeft,
+                    },
+                  ]}
                 />
               ))
             ) : (

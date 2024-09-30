@@ -34,11 +34,15 @@ export const get = query({
 })
 
 export const myRetros = query({
-  args: { userId: v.id('users') },
+  args: { userId: v.optional(v.id('users')) },
   handler: async (ctx, args) => {
+    const { userId } = args
+
+    if (!userId) return undefined
+
     const usersRetro = await ctx.db
       .query('users_retro')
-      .withIndex('by_user_id', q => q.eq('userId', args.userId))
+      .withIndex('by_user_id', q => q.eq('userId', userId))
       .collect()
 
     return asyncMap(usersRetro, async userRetro => {

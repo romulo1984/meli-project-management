@@ -1,17 +1,23 @@
-"use client";
-import { Doc, Id } from "@convex/_generated/dataModel";
-import NoteCard from "./card";
+'use client'
+import { Doc } from '@convex/_generated/dataModel'
+import NoteCard from './card'
+import React from 'react'
 
-interface NoteProps {
-  note: Doc<"notes">;
-  users: Doc<"users">[] | any;
-  me?: Doc<"users"> | undefined | null;
-  actionType?: boolean;
+interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
+  note: Doc<'notes'>
+  users: Doc<'users'>[] | any
+  me?: Doc<'users'> | undefined | null
+  actionType?: boolean
   blur?: boolean
-  highlighted?: boolean,
-  childrenNotes?: Doc<"notes">[]
+  highlighted?: boolean
+  childrenNotes?: Doc<'notes'>[]
+  toggleNote: (
+    event: React.MouseEvent<HTMLDivElement>,
+    note: Doc<'notes'>,
+  ) => void
+  selectedNotes: Doc<'notes'>[]
+  mergeSelectedNotes: (parent: Doc<'notes'>) => void
 }
-
 
 export default function Note(props: NoteProps) {
   const {
@@ -21,35 +27,51 @@ export default function Note(props: NoteProps) {
     blur = false,
     childrenNotes = [],
     highlighted,
-    users = []
-  } = props;
+    users = [],
+    toggleNote,
+    selectedNotes,
+    mergeSelectedNotes,
+    ...rest
+  } = props
 
-  const getUser = (id: string) => users ? users?.find((u: Doc<"users">) => u._id === id) : null
+  const getUser = (id: string) =>
+    users ? users?.find((u: Doc<'users'>) => u._id === id) : null
+
+  const hasChildren = childrenNotes && childrenNotes.length > 0
 
   return (
     <div className={`merge-container ${highlighted ? 'highlighted' : ''}`}>
       <NoteCard
+        {...rest}
         note={note}
         user={getUser(note.userId)}
         me={me}
         actionType={actionType}
         blur={blur}
-        roundTop={true}
-        roundBottom={!childrenNotes || childrenNotes.length < 1}
+        roundTop
+        roundBottom={!hasChildren}
+        onClick={!hasChildren ? e => toggleNote(e, note) : () => {}}
+        selected={!hasChildren && !!selectedNotes.find(n => n._id === note._id)}
+        mergeSelectedNotes={mergeSelectedNotes}
+        selectedNotes={selectedNotes}
+        childrenNotes={childrenNotes}
+        toggleNote={toggleNote}
       />
 
-      {childrenNotes && childrenNotes.length > 0 && childrenNotes.map((child, i) => (
-        <NoteCard
-          key={child._id}
-          note={child}
-          user={getUser(child.userId)}
-          me={me}
-          actionType={actionType}
-          blur={blur}
-          roundTop={false}
-          roundBottom={i === childrenNotes.length - 1}
-        />
-      ))}
+      {hasChildren &&
+        childrenNotes.map((child, i) => (
+          <NoteCard
+            {...rest}
+            key={child._id}
+            note={child}
+            user={getUser(child.userId)}
+            me={me}
+            actionType={actionType}
+            blur={blur}
+            roundTop={false}
+            roundBottom={i === childrenNotes.length - 1}
+          />
+        ))}
     </div>
-  );
+  )
 }

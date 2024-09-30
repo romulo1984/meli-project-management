@@ -17,16 +17,23 @@ import { ContextMenu } from 'primereact/contextmenu'
 import { MenuItem } from 'primereact/menuitem'
 import { ConfirmPopup } from 'primereact/confirmpopup'
 
-interface NoteProps {
+interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
   note: Doc<'notes'>
   user: Doc<'users'> | undefined | null
   me?: Doc<'users'> | undefined | null
   actionType?: boolean
   blur?: boolean
   highlighted?: boolean
+  selected?: boolean
   childrenNotes?: Doc<'notes'>[]
   roundTop: boolean
   roundBottom: boolean
+  mergeSelectedNotes?: (parent: Doc<'notes'>) => void
+  toggleNote?: (
+    event: React.MouseEvent<HTMLDivElement>,
+    note: Doc<'notes'>,
+  ) => void
+  selectedNotes?: Doc<'notes'>[]
 }
 
 interface NoteStructure {
@@ -43,6 +50,12 @@ export default function NoteCard(props: NoteProps) {
     blur = false,
     roundTop,
     roundBottom,
+    selected = false,
+    mergeSelectedNotes,
+    toggleNote,
+    selectedNotes = [],
+    childrenNotes = [],
+    ...rest
   } = props
   const { users } = useRetro({ retroId: note.retroId })
   const [editing, setEditing] = useState({
@@ -60,6 +73,8 @@ export default function NoteCard(props: NoteProps) {
   const UpdateNote = useMutation(api.notes.update)
   const RemoveNote = useMutation(api.notes.remove)
   const LikeNote = useMutation(api.notes.likeToggle)
+  const Unmerge = useMutation(api.notes.unmerge)
+  const UnmergeAll = useMutation(api.notes.unmergeAll)
 
   const isOwner = me?._id === user?._id
 
@@ -188,20 +203,84 @@ export default function NoteCard(props: NoteProps) {
         command: toggleEdition,
       },
       {
+        label: 'Select',
+        icon: 'pi pi-plus-circle',
+        visible:
+          note.mergeParentId === undefined &&
+          childrenNotes.length === 0 &&
+          !selected,
+        command: () => {
+          toggleNote && toggleNote({ ctrlKey: true } as any, note)
+        },
+      },
+      {
+        label: 'Unselect',
+        icon: 'pi pi-minus-circle',
+        visible: selected,
+        command: () => {
+          toggleNote && toggleNote({ ctrlKey: true } as any, note)
+        },
+      },
+      {
+        // @ts-ignore
+        label: (
+          <div>
+            <p>Merge</p>
+            <p className="text-xs">
+              <span className="text-slate-500 bg-slate-100 rounded-lg pe-1">{`${note.body.substring(
+                0,
+                20,
+              )}...`}</span>
+              <span> as parent</span>
+            </p>
+          </div>
+        ),
+        icon: 'pi pi-table',
+        visible: selectedNotes.length > 1 && selected,
+        command: () => mergeSelectedNotes && mergeSelectedNotes(note),
+      },
+      {
+        label: 'Unmerge',
+        icon: 'pi pi-clone',
+        visible: note.mergeParentId !== undefined,
+        command: () => Unmerge({ id: note._id }),
+      },
+      {
+        label: 'Unmerge all',
+        icon: 'pi pi-clone',
+        visible: childrenNotes.length > 0,
+        command: () => UnmergeAll({ parentId: note._id }),
+      },
+      {
         label: 'Delete',
         icon: 'pi pi-trash',
         disabled: !isOwner,
         command: () => setDeleteIntention(true),
       },
     ],
-    [isOwner, speechNote, toggleEdition],
+    [
+      Unmerge,
+      UnmergeAll,
+      childrenNotes.length,
+      isOwner,
+      mergeSelectedNotes,
+      note,
+      selected,
+      selectedNotes.length,
+      speechNote,
+      toggleEdition,
+      toggleNote,
+    ],
   )
 
   return (
     <div
+      {...rest}
       ref={cardRef}
       title={note.body}
-      className={`transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle}`}
+      className={`transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle} ${
+        selected ? 'selected' : ''
+      }`}
       onDoubleClick={toggleEdition}
       onContextMenu={showContextMenu}
     >

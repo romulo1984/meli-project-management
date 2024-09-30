@@ -1,40 +1,114 @@
 'use client'
 import useMyRetros from '@/helpers/hooks/useMyRetros'
 import Loading from '@/components/loading'
-import { Doc } from '@convex/_generated/dataModel'
-import Link from 'next/link'
-import Participants from '@/components/participants'
+
+import { api } from '@convex/_generated/api'
+import { useMutation } from 'convex/react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { faTrash, faRotateLeft } from '@fortawesome/free-solid-svg-icons'
+
+import { Doc, Id } from '@convex/_generated/dataModel'
+import RetroCard from '@/components/retro-card'
+import { useRouter } from 'next/navigation'
 
 export default function Retros() {
+  const router = useRouter()
   const { retros, isLoading, me } = useMyRetros()
+  const ArchiveRetro = useMutation(api.retros.updateStatus)
 
   const isOwner = (retro: any) => retro?.ownerId === me?._id
-  const formatDate = (date: any) => (new Date(date)).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+
+  const handleArchiveClick = (retroId: Id<'retros'> | undefined) => {
+    if (retroId) {
+      ArchiveRetro({
+        id: retroId,
+        status: 'archived',
+      })
+    }
+  }
+
+  const handleActiveClick = (retroId: Id<'retros'> | undefined) => {
+    if (retroId) {
+      ArchiveRetro({
+        id: retroId,
+        status: 'active',
+      })
+    }
+  }
+
+  const activeRetros = retros.filter(
+    retro => retro.status === 'active' || retro.status === undefined,
+  )
+  const archivedRetros = retros.filter(retro => retro.status === 'archived')
 
   return (
-    <ul role='list' className='container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col'>
-      {isLoading ? <Loading /> : (
-        retros.map((retro) => (
-          <Link href={`/retro/${retro?._id}`} key={retro?._id} className="flex justify-between gap-x-6 py-5">
-            <div className="flex min-w-0 gap-x-4">
-              <div className="min-w-0 flex-auto">
-                <p className="text-sm font-semibold leading-6 text-gray-900">{retro?.name}</p>
-                <p className="mt-1 truncate text-xs leading-5 text-gray-500">
-                  Created by {retro?.owner?.name ?? ''}{isOwner(retro) && (' (you)')}
-                </p>
+    <div className="container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col gap-4">
+      {isLoading ? (
+        <Loading />
+      ) : (
+        <Tabs defaultValue="active" className="wx-auto">
+          <TabsList>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="archived">Archived</TabsTrigger>
+          </TabsList>
+          <TabsContent value="active" className="flex flex-col gap-4">
+            {activeRetros.length > 0 ? (
+              activeRetros.map(retro => (
+                <RetroCard
+                  key={retro._id}
+                  retro={retro as Doc<'retros'> | any}
+                  isOwner={isOwner}
+                  actions={[
+                    {
+                      text: 'Open Retro',
+                      onClick: () => router.push(`/retro/${retro._id}`),
+                    },
+                    {
+                      text: 'Archive',
+                      show: isOwner(retro),
+                      onClick: () => handleArchiveClick(retro._id),
+                      variant: 'secondary',
+                      icon: faTrash,
+                    },
+                  ]}
+                />
+              ))
+            ) : (
+              <div className="text-center text-zinc-400 rounded-md py-10">
+                <p>No active retros</p>
               </div>
-            </div>
-            <div className="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
-              <p className="text-sm leading-6 text-gray-900">{formatDate(retro?._creationTime)}</p>
-              <Participants size={24} users={retro.users} />
-            </div>
-          </Link>
-        )))}
-    </ul>
+            )}
+          </TabsContent>
+          <TabsContent value="archived" className="flex flex-col gap-4">
+            {archivedRetros.length > 0 ? (
+              archivedRetros.map(retro => (
+                <RetroCard
+                  key={retro._id}
+                  retro={retro as Doc<'retros'> | any}
+                  isOwner={isOwner}
+                  actions={[
+                    {
+                      text: 'Open Retro',
+                      onClick: () => router.push(`/retro/${retro._id}`),
+                    },
+                    {
+                      text: 'Restore',
+                      show: isOwner(retro),
+                      onClick: () => handleActiveClick(retro._id),
+                      variant: 'secondary',
+                      icon: faRotateLeft,
+                    },
+                  ]}
+                />
+              ))
+            ) : (
+              <div className="text-center text-zinc-400 rounded-md py-10">
+                <p>No archived retros</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
   )
 }

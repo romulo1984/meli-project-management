@@ -6,17 +6,20 @@ export const join = mutation({
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query('users')
-      .withIndex('by_token', (q) =>
-        q.eq('tokenIdentifier', args.userId)
-      )
+      .withIndex('by_token', q => q.eq('tokenIdentifier', args.userId))
       .unique()
 
-    if (user) {
-      return ctx.db
-        .insert('users_retro', {
-          retroId: args.retroId,
-          userId: user._id,
-        })
+    const existingUserInRetro = await ctx.db
+      .query('users_retro')
+      .withIndex('by_retro_id', q => q.eq('retroId', args.retroId))
+      .filter(q => q.eq('userId', args.userId))
+      .unique()
+
+    if (user && !existingUserInRetro) {
+      return ctx.db.insert('users_retro', {
+        retroId: args.retroId,
+        userId: user._id,
+      })
     }
-  }
+  },
 })

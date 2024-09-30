@@ -3,10 +3,11 @@ import { v } from 'convex/values'
 
 export const getRetroNotes = query({
   args: { retroId: v.id('retros') },
-  handler: async (ctx, args) => ctx.db
-    .query('notes')
-    .filter((q) => q.eq(q.field('retroId'), args.retroId))
-    .collect()
+  handler: async (ctx, args) =>
+    ctx.db
+      .query('notes')
+      .filter(q => q.eq(q.field('retroId'), args.retroId))
+      .collect(),
 })
 
 export const store = mutation({
@@ -26,7 +27,7 @@ export const store = mutation({
       anonymous: args.anonymous || false,
     })
     return noteId
-  }
+  },
 })
 
 export const remove = mutation({
@@ -38,9 +39,9 @@ export const remove = mutation({
       return
     }
 
-
-    const childrenNotes = await ctx.db.query('notes')
-      .filter((q) => q.eq(q.field('mergeParentId'), note._id))
+    const childrenNotes = await ctx.db
+      .query('notes')
+      .filter(q => q.eq(q.field('mergeParentId'), note._id))
       .collect()
 
     if (childrenNotes.length > 0) {
@@ -48,7 +49,7 @@ export const remove = mutation({
 
       if (firstChild) {
         await ctx.db.patch(firstChild._id, {
-          mergeParentId: undefined
+          mergeParentId: undefined,
         })
 
         for (let childNote of childrenNotes) {
@@ -58,10 +59,10 @@ export const remove = mutation({
         }
       }
     }
-    
+
     await ctx.db.delete(note._id)
     return note
-  }
+  },
 })
 
 export const likeToggle = mutation({
@@ -80,22 +81,24 @@ export const likeToggle = mutation({
       return likes
     }
     return []
-  }
+  },
 })
 
 export const updatePositions = mutation({
   args: {
-    notes: v.array(v.object({
-      id: v.id('notes'),
-      position: v.number(),
-    }))
+    notes: v.array(
+      v.object({
+        id: v.id('notes'),
+        position: v.number(),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     for (const note of args.notes) {
       await ctx.db.patch(note.id, { position: note.position })
     }
     return true
-  }
+  },
 })
 
 export const assigne = mutation({
@@ -107,7 +110,7 @@ export const assigne = mutation({
       return true
     }
     return false
-  }
+  },
 })
 
 export const unnasign = mutation({
@@ -119,7 +122,7 @@ export const unnasign = mutation({
       return true
     }
     return false
-  }
+  },
 })
 
 export const update = mutation({
@@ -138,7 +141,7 @@ export const update = mutation({
       body: args.body,
       anonymous: args.anonymous,
     })
-  }
+  },
 })
 
 export const merge = mutation({
@@ -161,8 +164,9 @@ export const merge = mutation({
       mergeParentId: parent._id,
     })
 
-    const childrenNotes = await ctx.db.query('notes')
-      .filter((q) => q.eq(q.field('mergeParentId'), source._id))
+    const childrenNotes = await ctx.db
+      .query('notes')
+      .filter(q => q.eq(q.field('mergeParentId'), source._id))
       .collect()
 
     if (childrenNotes.length > 0) {
@@ -172,5 +176,66 @@ export const merge = mutation({
         })
       }
     }
-  }
+  },
+})
+
+export const unmerge = mutation({
+  args: { id: v.id('notes') },
+  handler: async (ctx, args) => {
+    const note = await ctx.db.get(args.id)
+    if (!note) {
+      return false
+    }
+
+    await ctx.db.patch(note._id, {
+      mergeParentId: undefined,
+    })
+  },
+})
+
+export const unmergeAll = mutation({
+  args: { parentId: v.id('notes') },
+  handler: async (ctx, args) => {
+    const note = await ctx.db.get(args.parentId)
+    if (!note) {
+      return false
+    }
+
+    const childrenNotes = await ctx.db
+      .query('notes')
+      .filter(q => q.eq(q.field('mergeParentId'), note._id))
+      .collect()
+
+    if (childrenNotes.length > 0) {
+      for (let childNote of childrenNotes) {
+        await ctx.db.patch(childNote._id, {
+          mergeParentId: undefined,
+        })
+      }
+    }
+  },
+})
+
+export const mergeMultiple = mutation({
+  args: {
+    sourceIds: v.array(v.id('notes')),
+    parentId: v.id('notes'),
+  },
+  handler: async (ctx, args) => {
+    const parent = await ctx.db.get(args.parentId)
+    if (!parent) {
+      return false
+    }
+
+    for (let sourceId of args.sourceIds) {
+      const source = await ctx.db.get(sourceId)
+      if (!source) {
+        continue
+      }
+
+      await ctx.db.patch(source._id, {
+        mergeParentId: parent._id,
+      })
+    }
+  },
 })

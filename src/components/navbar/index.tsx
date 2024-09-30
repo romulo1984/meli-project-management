@@ -1,9 +1,19 @@
-"use client";
-import { useUser, SignInButton, UserButton } from "@clerk/nextjs";
-import Link from "next/link";
+'use client'
+import { useUser, SignInButton, UserButton } from '@clerk/nextjs'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faBell } from '@fortawesome/free-regular-svg-icons'
+import Link from 'next/link'
+import { DynamicImport } from '@/helpers/dynamicImport'
+
+import { FC } from 'react'
+
+const OlvyWidget: FC<OlvyWidgetProps> = DynamicImport(
+  'OlvyWidget',
+  () => import('@olvyhq/widget-react'),
+) as FC<OlvyWidgetProps>
 
 export default function Navbar() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useUser()
 
   return (
     <nav className="container mx-auto max-w-screen-xl py-6 px-6 flex justify-between">
@@ -18,12 +28,29 @@ export default function Navbar() {
       <div className="flex justify-end items-center">
         {isSignedIn ? (
           <>
-            <Link className="mr-6 text-slate-600" href="/new">
+            <Link
+              className="mr-6 text-slate-600 hover:text-slate-400 transition-colors"
+              href="/new"
+            >
               New
             </Link>
-            <Link className="mr-6 text-slate-600" href="/retros">
+            <Link
+              className="mr-6 text-slate-600 hover:text-slate-400 transition-colors"
+              href="/retros"
+            >
               My Retros
             </Link>
+            <OlvyWidget
+              config={{ workspaceAlias: 'retrospectool' }}
+              targetElement={
+                <div
+                  id="olvy-whats-new"
+                  className="mr-6 text-slate-600 hover:text-slate-400 transition-colors cursor-pointer"
+                >
+                  <FontAwesomeIcon icon={faBell} />
+                </div>
+              }
+            />
             <UserButton />
           </>
         ) : (
@@ -33,5 +60,5 @@ export default function Navbar() {
         )}
       </div>
     </nav>
-  );
+  )
 }

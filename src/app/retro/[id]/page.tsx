@@ -15,6 +15,8 @@ import useSettings from '@/helpers/hooks/useSettings'
 import { useUser } from '@clerk/nextjs'
 import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
+import { Button } from '@/components/ui/button'
+import { Sparkles } from 'lucide-react'
 import {
   DndContext,
   DragCancelEvent,
@@ -33,6 +35,7 @@ import { useMutation } from 'convex/react'
 import { useMemo, useRef, useState } from 'react'
 import { confirmAlert } from 'react-confirm-alert'
 import 'react-confirm-alert/src/react-confirm-alert.css'
+import { useGenerateActionItems } from '@/helpers/hooks/useGenerateActionItems'
 
 interface RetroProps {
   params: {
@@ -93,6 +96,11 @@ export default function Retro(props: RetroProps) {
   const mergeOverRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mergeTarget, setMergeTarget] = useState<Over>()
   const { toggleNote, selectedNotes, mergeSelectedNotes } = useSelectedNotes()
+  const { generateActionItems, isGenerating } = useGenerateActionItems({
+    retroId,
+    userId: me?._id,
+    items: notes?.filter(n => n.pipeline === 'bad').map(n => n.body) || [],
+  })
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
@@ -260,6 +268,9 @@ export default function Retro(props: RetroProps) {
     return items
   }
 
+  const showGenerateActionItemsButton =
+    parsedNotes.bad.length > 0 && parsedNotes.action.length === 0 && isSignedIn
+
   return (
     <DndContext
       onDragEnd={handleDragEnd}
@@ -386,7 +397,15 @@ export default function Retro(props: RetroProps) {
               </div>
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <h3 className="text-lg text-zinc-500 mb-4">Actions</h3>
+                  <h3 className="text-lg text-zinc-500 mb-4 flex items-center gap-2">
+                    <p>Actions</p>
+                    {isGenerating && (
+                      <Sparkles
+                        className="mr-2 h-4 w-4 text-violet-800 generating-action-items-intermittent"
+                        strokeWidth="1"
+                      />
+                    )}
+                  </h3>
                   <p className="text-zinc-400">{parsedNotes.action?.length}</p>
                 </div>
                 {isSignedIn && (
@@ -404,9 +423,35 @@ export default function Retro(props: RetroProps) {
                     items={parsedNotes.action}
                     strategy={verticalListSortingStrategy}
                   >
+                    {showGenerateActionItemsButton && (
+                      <div className="flex flex-col items-center w-full text-center gap-2">
+                        <p className="text-sm text-zinc-400">
+                          Automatically generate action notes with AI
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="text-violet-800"
+                          onClick={generateActionItems}
+                          disabled={isGenerating}
+                        >
+                          <Sparkles
+                            className={`mr-2 h-4 w-4 ${
+                              isGenerating
+                                ? 'generating-action-items-intermittent'
+                                : ''
+                            }`}
+                            strokeWidth="1"
+                          />
+                          Generate actions
+                        </Button>
+                      </div>
+                    )}
                     {parsedNotes.action?.map(note => (
                       <Sortable key={note._id} id={note._id}>
                         <Note
+                          className={
+                            isGenerating ? 'generating-action-items' : ''
+                          }
                           highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}

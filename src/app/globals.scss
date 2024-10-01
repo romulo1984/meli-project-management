@@ -58,6 +58,38 @@ body {
   @apply transition-all w-full mb-4 rounded-lg;
 }
 
+.generating-action-items {
+  animation: blink-border 1s ease-in-out;
+}
+
+.generating-action-items-intermittent {
+  animation: blink-icon 1s ease-in-out infinite;
+}
+
+@keyframes blink-border {
+  0% {
+    @apply outline outline-2 outline-violet-800;
+  }
+  100% {
+    @apply outline outline-4 outline-transparent;
+  }
+}
+
+@keyframes blink-icon {
+  0% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+}
+
 // Primereact override
 .p-confirm-popup {
   @apply text-sm;

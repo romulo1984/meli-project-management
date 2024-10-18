@@ -2,7 +2,7 @@ import type { anthropic } from '@ai-sdk/anthropic'
 import type { openai } from '@ai-sdk/openai'
 import { generateText } from 'ai'
 
-export type Models = 'claude-3-5-sonnet-20240620' | 'gpt-4o-mini'
+export type Models = 'claude-3-5-sonnet-20240620' | 'gpt-4o-mini' | 'gpt-4o'
 
 export type CreateCompletionProps = {
   instance: typeof anthropic | typeof openai

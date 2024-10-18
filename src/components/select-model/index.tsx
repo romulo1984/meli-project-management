@@ -28,6 +28,10 @@ const models = [
     label: 'GPT-4o Mini',
     value: 'gpt-4o-mini',
   },
+  {
+    label: 'GPT-4o',
+    value: 'gpt-4o',
+  },
 ]
 
 type SelectModelProps = {

@@ -11,4 +11,8 @@ export const MODELS = {
     instance: openai,
     model: 'gpt-4o-mini' as Models,
   },
+  'gpt-4o': {
+    instance: openai,
+    model: 'gpt-4o' as Models,
+  },
 }

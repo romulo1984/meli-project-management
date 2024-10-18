@@ -36,6 +36,7 @@ import { useMemo, useRef, useState } from 'react'
 import { confirmAlert } from 'react-confirm-alert'
 import 'react-confirm-alert/src/react-confirm-alert.css'
 import { useGenerateActionItems } from '@/helpers/hooks/useGenerateActionItems'
+import { SelectModel } from '@/components/select-model'
 
 interface RetroProps {
   params: {
@@ -101,6 +102,7 @@ export default function Retro(props: RetroProps) {
     userId: me?._id,
     items: notes?.filter(n => n.pipeline === 'bad').map(n => n.body) || [],
   })
+  const [selectedModel, setModel] = useState('claude-3-5-sonnet')
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
@@ -428,22 +430,28 @@ export default function Retro(props: RetroProps) {
                         <p className="text-sm text-zinc-400">
                           Automatically generate action notes with AI
                         </p>
-                        <Button
-                          variant="outline"
-                          className="text-violet-800"
-                          onClick={generateActionItems}
-                          disabled={isGenerating}
-                        >
-                          <Sparkles
-                            className={`mr-2 h-4 w-4 ${
-                              isGenerating
-                                ? 'generating-action-items-intermittent'
-                                : ''
-                            }`}
-                            strokeWidth="1"
+                        <div className="flex gap-2">
+                          <SelectModel
+                            value={selectedModel}
+                            setValue={setModel}
                           />
-                          Generate actions
-                        </Button>
+                          <Button
+                            variant="outline"
+                            className="text-violet-800"
+                            onClick={() => generateActionItems(selectedModel)}
+                            disabled={isGenerating || !selectedModel}
+                          >
+                            <Sparkles
+                              className={`mr-2 h-4 w-4 ${
+                                isGenerating
+                                  ? 'generating-action-items-intermittent'
+                                  : ''
+                              }`}
+                              strokeWidth="1"
+                            />
+                            Generate actions
+                          </Button>
+                        </div>
                       </div>
                     )}
                     {parsedNotes.action?.map(note => (

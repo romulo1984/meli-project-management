@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { Id } from '@convex/_generated/dataModel'
+import { Models } from '@/services/CompletionIA'
 
 interface GenerateActionItemsProps {
   retroId: Id<'retros'>
@@ -15,39 +16,44 @@ const useGenerateActionItems = (props: GenerateActionItemsProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const CreateNote = useMutation(api.notes.store)
 
-  const generateActionItems = async () => {
+  const generateActionItems = async (model = 'claude-3-5-sonnet') => {
     if (userId === undefined) return
 
     setIsLoading(true)
     let index = 0
 
-    const response = await fetch('/api/generate-actions', {
-      method: 'POST',
-      body: JSON.stringify({ items }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
+    try {
+      const response = await fetch('/api/generate-actions', {
+        method: 'POST',
+        body: JSON.stringify({ items, model }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
 
-    const { suggested_action_items } = await response.json()
+      const { suggested_action_items } = await response.json()
 
-    const processNext = () => {
-      if (index < suggested_action_items.length) {
-        CreateNote({
-          body: suggested_action_items[index],
-          pipeline: 'action',
-          retroId: retroId,
-          userId: userId,
-          anonymous: false,
-        })
-        index++
-        setTimeout(processNext, 1000)
-      } else {
-        setIsLoading(false)
+      const processNext = () => {
+        if (index < suggested_action_items.length) {
+          CreateNote({
+            body: suggested_action_items[index],
+            pipeline: 'action',
+            retroId: retroId,
+            userId: userId,
+            anonymous: false,
+          })
+          index++
+          setTimeout(processNext, 1000)
+        } else {
+          setIsLoading(false)
+        }
       }
-    }
 
-    processNext()
+      processNext()
+    } catch (e: any) {
+      console.log('error', e.message)
+      setIsLoading(false)
+    }
   }
 
   return {

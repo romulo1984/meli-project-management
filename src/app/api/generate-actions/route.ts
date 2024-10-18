@@ -1,4 +1,4 @@
-import type { NextRequest } from 'next/server'
+import { type NextRequest } from 'next/server'
 import { getAuth } from '@clerk/nextjs/server'
 import {
   transformItemsInText,
@@ -6,22 +6,7 @@ import {
 } from '@/helpers/transforms'
 import { CreateCompletion } from '@/services/CompletionIA'
 import { ACTION_ITEMS } from '@/services/system-content'
-import OpenAI from 'openai'
-import Anthropic from '@anthropic-ai/sdk'
-import { Models } from '@/services/CompletionIA'
-
-const MODELS = {
-  'claude-3-5-sonnet': {
-    instance: new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    }),
-    model: 'claude-3-5-sonnet-20240620' as Models,
-  },
-  'gpt-4o-mini': {
-    instance: new OpenAI(),
-    model: 'gpt-4o-mini' as Models,
-  },
-}
+import { MODELS } from '@/constants/models'
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,9 +34,7 @@ export async function POST(req: NextRequest) {
 
     return Response.json(
       {
-        suggested_action_items: transformTextInItems(
-          completion.messages[0].text || '',
-        ),
+        suggested_action_items: transformTextInItems(completion || ''),
       },
       { status: 200 },
     )

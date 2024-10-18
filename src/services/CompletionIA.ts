@@ -1,10 +1,11 @@
-import Anthropic from '@anthropic-ai/sdk'
-import OpenAI from 'openai'
+import type { anthropic } from '@ai-sdk/anthropic'
+import type { openai } from '@ai-sdk/openai'
+import { generateText } from 'ai'
 
 export type Models = 'claude-3-5-sonnet-20240620' | 'gpt-4o-mini'
 
 export type CreateCompletionProps = {
-  instance: Anthropic | OpenAI
+  instance: typeof anthropic | typeof openai
   model: Models
   systemContent: string
   userContent: string
@@ -16,50 +17,13 @@ const CreateCompletion = async ({
   systemContent,
   userContent,
 }: CreateCompletionProps) => {
-  let messages: { text: string }[] = []
+  const { text } = await generateText({
+    model: instance(model),
+    system: systemContent,
+    prompt: userContent,
+  })
 
-  if (instance instanceof OpenAI) {
-    const result = await instance?.chat.completions.create({
-      model,
-      messages: [
-        {
-          role: 'system',
-          content: systemContent,
-        },
-        {
-          role: 'user',
-          content: userContent,
-        },
-      ],
-    })
-
-    messages =
-      result?.choices.map(({ message }) => ({ text: message.content || '' })) ||
-      []
-  }
-
-  if (instance instanceof Anthropic) {
-    console.log('romin:', instance)
-    const result = await instance?.messages.create({
-      model,
-      max_tokens: 1000,
-      temperature: 0,
-      system: systemContent,
-      messages: [
-        {
-          role: 'user',
-          content: userContent,
-        },
-      ],
-    })
-
-    // @ts-ignore
-    messages = result?.content.filter(({ type }) => type === 'text') || []
-  }
-
-  return {
-    messages,
-  }
+  return text
 }
 
 export { CreateCompletion }

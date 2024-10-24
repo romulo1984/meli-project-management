@@ -271,7 +271,10 @@ export default function Retro(props: RetroProps) {
   }
 
   const showGenerateActionItemsButton =
-    parsedNotes.bad.length > 0 && parsedNotes.action.length === 0 && isSignedIn
+    parsedNotes.bad.length > 0 &&
+    parsedNotes.action.length === 0 &&
+    isSignedIn &&
+    settings.notesShowingStatus.value !== 'hidden'
 
   return (
     <DndContext

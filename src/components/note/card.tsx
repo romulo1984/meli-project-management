@@ -275,12 +275,11 @@ export default function NoteCard(props: NoteProps) {
 
   return (
     <div
-      {...rest}
       ref={cardRef}
       title={note.body}
       className={`transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle} ${
         selected ? 'selected' : ''
-      }`}
+      } ${rest.className}`}
       onDoubleClick={toggleEdition}
       onContextMenu={showContextMenu}
     >

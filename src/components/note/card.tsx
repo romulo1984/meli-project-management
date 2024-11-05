@@ -299,7 +299,7 @@ export default function NoteCard(props: NoteProps) {
       onDoubleClick={toggleEdition}
       onContextMenu={showContextMenu}
     >
-      <div className={`break-words mb-2 ${obfuscate ? 'blur-sm' : ''}`}>
+      <div className={`break-anywhere mb-2 ${obfuscate ? 'blur-sm' : ''}`}>
         {!editing.value && (
           <NoteBody note={note} users={users} obfuscate={obfuscate} />
         )}

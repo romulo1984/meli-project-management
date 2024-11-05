@@ -42,6 +42,18 @@ body {
   text-shadow: rgba(0, 0, 0, .01) 0 0 1px;
 }
 
+@supports not (overflow-wrap: anywhere) {
+  .break-anywhere {
+    word-break: break-word;
+  }
+}
+
+@supports (overflow-wrap: anywhere) {
+  .break-anywhere {
+    overflow-wrap: anywhere;
+  }
+}
+
 .user-mention {
   @apply text-pink-400 font-medium;
 }

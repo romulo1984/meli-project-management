@@ -1,5 +1,5 @@
 const transformItemsInText = (items: string[]) => {
-  return items.map((item, index) => `${index + 1} - ${item}`).join('\n')
+  return items.map(item => item).join('\n')
 }
 
 const transformTextInItems = (text: string) => {

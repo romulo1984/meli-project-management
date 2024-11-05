@@ -16,6 +16,7 @@ import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenu } from 'primereact/contextmenu'
 import { MenuItem } from 'primereact/menuitem'
 import { ConfirmPopup } from 'primereact/confirmpopup'
+import { useGenerateActionItems } from '@/helpers/hooks/useGenerateActionItems'
 
 interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
   note: Doc<'notes'>
@@ -34,6 +35,8 @@ interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
     note: Doc<'notes'>,
   ) => void
   selectedNotes?: Doc<'notes'>[]
+  generateActionItems: () => void
+  isGenerating: boolean
 }
 
 interface NoteStructure {
@@ -55,6 +58,8 @@ export default function NoteCard(props: NoteProps) {
     toggleNote,
     selectedNotes = [],
     childrenNotes = [],
+    generateActionItems,
+    isGenerating,
     ...rest
   } = props
   const { users } = useRetro({ retroId: note.retroId })
@@ -257,11 +262,19 @@ export default function NoteCard(props: NoteProps) {
         disabled: !isOwner,
         command: () => setDeleteIntention(true),
       },
+      {
+        label: 'Generate action',
+        icon: 'pi pi-sparkles',
+        visible: note.pipeline === 'bad',
+        disabled: isGenerating,
+        command: () => {
+          generateActionItems()
+        },
+      },
     ],
     [
       Unmerge,
       UnmergeAll,
-      childrenNotes.length,
       isOwner,
       mergeSelectedNotes,
       note,
@@ -270,6 +283,9 @@ export default function NoteCard(props: NoteProps) {
       speechNote,
       toggleEdition,
       toggleNote,
+      childrenNotes,
+      generateActionItems,
+      isGenerating,
     ],
   )
 
@@ -283,7 +299,7 @@ export default function NoteCard(props: NoteProps) {
       onDoubleClick={toggleEdition}
       onContextMenu={showContextMenu}
     >
-      <div className={`mb-2 ${obfuscate ? 'blur-sm' : ''}`}>
+      <div className={`break-words mb-2 ${obfuscate ? 'blur-sm' : ''}`}>
         {!editing.value && (
           <NoteBody note={note} users={users} obfuscate={obfuscate} />
         )}

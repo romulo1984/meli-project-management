@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
 import { Id } from '@convex/_generated/dataModel'
-import { Models } from '@/services/CompletionIA'
 
 interface GenerateActionItemsProps {
   retroId: Id<'retros'>
@@ -16,7 +15,7 @@ const useGenerateActionItems = (props: GenerateActionItemsProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const CreateNote = useMutation(api.notes.store)
 
-  const generateActionItems = async (model = 'claude-3-5-sonnet') => {
+  const generateActionItems = async (model = 'gpt-4o') => {
     if (userId === undefined) return
 
     setIsLoading(true)
@@ -43,7 +42,7 @@ const useGenerateActionItems = (props: GenerateActionItemsProps) => {
             anonymous: false,
           })
           index++
-          setTimeout(processNext, 1000)
+          setTimeout(processNext, 600)
         } else {
           setIsLoading(false)
         }

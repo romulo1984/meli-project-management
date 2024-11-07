@@ -5,7 +5,7 @@ import {
   transformTextInItems,
 } from '@/helpers/transforms'
 import { CreateCompletion } from '@/services/CompletionIA'
-import { ACTION_ITEMS } from '@/services/system-content'
+import { ACTION_ITEN } from '@/services/system-content'
 import { MODELS } from '@/constants/models'
 
 export async function POST(req: NextRequest) {
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     const completion = await CreateCompletion({
       ...selectedModel,
-      systemContent: ACTION_ITEMS,
+      systemContent: ACTION_ITEN,
       userContent: transformItemsInText(items),
     })
 

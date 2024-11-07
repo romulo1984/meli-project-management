@@ -270,11 +270,14 @@ export default function Retro(props: RetroProps) {
     return items
   }
 
-  const showGenerateActionItemsButton =
-    parsedNotes.bad.length > 0 &&
-    parsedNotes.action.length === 0 &&
-    isSignedIn &&
-    settings.notesShowingStatus.value !== 'hidden'
+  // const showGenerateActionItemsButton =
+  //   parsedNotes.bad.length > 0 &&
+  //   parsedNotes.action.length === 0 &&
+  //   isSignedIn &&
+  //   settings.notesShowingStatus.value !== 'hidden'
+
+  // Disabled AI action items generation to all bad notes
+  const showGenerateActionItemsButton = false
 
   return (
     <DndContext

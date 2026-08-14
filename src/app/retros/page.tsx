@@ -42,12 +42,18 @@ export default function Retros() {
   const archivedRetros = retros.filter(retro => retro.status === 'archived')
 
   return (
-    <div className="container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col gap-4">
+    <div className="container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col gap-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold text-slate-700">My retros</h1>
+        <p className="text-sm text-zinc-400">
+          Your active and archived boards.
+        </p>
+      </div>
       {isLoading ? (
         <Loading />
       ) : (
         <Tabs defaultValue="active" className="wx-auto">
-          <TabsList>
+          <TabsList className="mb-2">
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="archived">Archived</TabsTrigger>
           </TabsList>
@@ -74,8 +80,13 @@ export default function Retros() {
                 />
               ))
             ) : (
-              <div className="text-center text-zinc-400 rounded-md py-10">
-                <p>No active retros</p>
+              <div className="rounded-2xl border border-dashed border-zinc-200 py-16 text-center">
+                <p className="text-sm font-medium text-zinc-500">
+                  No active retros
+                </p>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Create one from the home page to get started.
+                </p>
               </div>
             )}
           </TabsContent>
@@ -102,8 +113,13 @@ export default function Retros() {
                 />
               ))
             ) : (
-              <div className="text-center text-zinc-400 rounded-md py-10">
-                <p>No archived retros</p>
+              <div className="rounded-2xl border border-dashed border-zinc-200 py-16 text-center">
+                <p className="text-sm font-medium text-zinc-500">
+                  No archived retros
+                </p>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Retros you archive will show up here.
+                </p>
               </div>
             )}
           </TabsContent>

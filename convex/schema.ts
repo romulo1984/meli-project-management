@@ -47,6 +47,16 @@ export default defineSchema({
     goodLabel: v.optional(v.string()),
     badLabel: v.optional(v.string()),
     actionLabel: v.optional(v.string()),
+    // Per-person like/vote budget for the whole retro (classic dot-voting).
+    // Optional/backward-compatible: treat undefined as the default of 3. The
+    // value is clamped to [1, 20] server-side (see convex/retros.ts) and the
+    // budget is enforced in convex/notes.ts likeToggle — never trusted from the
+    // client.
+    maxLikes: v.optional(v.number()),
+    // When true, each column's top-level cards are ordered by total group votes
+    // (descending) instead of manual position. Optional/backward-compatible
+    // (undefined = off). Owner-toggled, shared across everyone on the board.
+    sortByVotes: v.optional(v.boolean()),
     // Optional, unused by the current app (feature/encrypted-notes compat) — see notes table.
     encryptionEnabled: v.optional(v.boolean()),
     keyVersion: v.optional(v.number()),

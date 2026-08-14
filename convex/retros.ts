@@ -11,6 +11,21 @@ const unknownUser = {
 // and headers readable. Rendered through React (auto-escaped), never raw markup.
 const MAX_COLUMN_LABEL_LENGTH = 30
 
+// Per-person like/vote budget bounds. `DEFAULT_MAX_LIKES` is used whenever a
+// retro has no explicit value (backward-compatible). Keep in sync with the
+// clamp in convex/notes.ts likeToggle and the client stepper bounds.
+const MIN_MAX_LIKES = 1
+const MAX_MAX_LIKES = 20
+export const DEFAULT_MAX_LIKES = 3
+
+// Clamp an untrusted numeric budget to [MIN_MAX_LIKES, MAX_MAX_LIKES]. Guards
+// against NaN/Infinity/floats coming from the client (CWE-190 / CWE-841): the
+// value is floored and bounded, and falls back to the default when not finite.
+export const clampMaxLikes = (value: number | undefined): number => {
+  if (value === undefined || !Number.isFinite(value)) return DEFAULT_MAX_LIKES
+  return Math.min(MAX_MAX_LIKES, Math.max(MIN_MAX_LIKES, Math.floor(value)))
+}
+
 export const get = query({
   args: { id: v.id('retros') },
   handler: async (ctx, args) => {
@@ -151,6 +166,33 @@ export const updateStatus = mutation({
 
     if (retro) {
       await ctx.db.patch(retro._id, { status: args.status })
+    }
+  },
+})
+
+// Set the per-person like/vote budget for the retro. The incoming number is
+// UNTRUSTED — clamp it to [1, 20] server-side (never rely on the client's own
+// min/max). The budget itself is enforced in convex/notes.ts likeToggle.
+export const updateMaxLikes = mutation({
+  args: { id: v.id('retros'), maxLikes: v.number() },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { maxLikes: clampMaxLikes(args.maxLikes) })
+    }
+  },
+})
+
+// Toggle the "sort by most voted" ordering for the retro. Shared across every
+// participant; the actual re-sorting happens client-side in the board page.
+export const updateSortByVotes = mutation({
+  args: { id: v.id('retros'), sortByVotes: v.boolean() },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      await ctx.db.patch(retro._id, { sortByVotes: args.sortByVotes })
     }
   },
 })

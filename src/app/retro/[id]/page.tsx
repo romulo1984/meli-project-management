@@ -64,6 +64,20 @@ const defaultParsedNotes: ParsedNotes = {
   children: {},
 }
 
+// Friendly placeholder shown when a column has no cards yet.
+function EmptyColumn() {
+  return (
+    <p className="mt-1 rounded-xl border border-dashed border-zinc-200 py-8 text-center text-xs text-zinc-400">
+      No cards yet
+    </p>
+  )
+}
+
+// Shared column shell: soft card look matching the landing page (rounded,
+// subtle border + shadow, gentle hover). Radius/spacing kept consistent.
+const columnClassName =
+  'flex w-full flex-col rounded-2xl border border-zinc-200/70 bg-zinc-50 p-4 shadow-sm transition-shadow hover:shadow-md'
+
 export default function Retro(props: RetroProps) {
   const retroId = props.params.id
   const [note, setNote] = useState({ body: '', anonymous: false })
@@ -74,6 +88,9 @@ export default function Retro(props: RetroProps) {
     action: false,
   })
   const [isEditColumnsOpen, setEditColumnsOpen] = useState(false)
+  const [focusColumn, setFocusColumn] = useState<
+    'good' | 'bad' | 'action' | undefined
+  >(undefined)
   const [isNameModalOpen, setNameModalOpen] = useState(false)
   const {
     isLoading,
@@ -88,6 +105,8 @@ export default function Retro(props: RetroProps) {
   } = useRetro({ retroId })
   const CreateNote = useMutation(api.notes.store)
   const UpdatePositions = useMutation(api.notes.updatePositions)
+  const UpdateMaxLikes = useMutation(api.retros.updateMaxLikes)
+  const UpdateSortByVotes = useMutation(api.retros.updateSortByVotes)
   const { hasName, ready, promptName } = useIdentity()
   useJoinRetro({ retroId })
 
@@ -163,6 +182,13 @@ export default function Retro(props: RetroProps) {
     })
   }
 
+  // Open the edit-columns modal focused on a specific column's input (from that
+  // column's header pencil), so the owner can retype the label straight away.
+  const openEditColumns = (column: 'good' | 'bad' | 'action') => {
+    setFocusColumn(column)
+    setEditColumnsOpen(true)
+  }
+
   const parsedNotes = useMemo(() => {
     if (!notes) {
       return defaultParsedNotes
@@ -201,9 +227,24 @@ export default function Retro(props: RetroProps) {
       }
     }
 
-    good = good?.sort((a: any, b: any) => a.position - b.position)
-    bad = bad.sort((a: any, b: any) => a.position - b.position)
-    action = action.sort((a: any, b: any) => a.position - b.position)
+    // A group's vote total is the parent's likes plus every merged child's
+    // likes (children live in `actionChildren`, keyed by the parent's _id).
+    const groupVotes = (n: any): number =>
+      (n.likes?.length ?? 0) +
+      (actionChildren[n._id] ?? []).reduce(
+        (sum: number, child: NoteItem) => sum + (child.likes?.length ?? 0),
+        0,
+      )
+
+    // Owner-toggled, shared ordering: by total group votes (desc) when
+    // `sortByVotes` is on, otherwise the manual drag-and-drop `position`.
+    const byPosition = (a: any, b: any) => a.position - b.position
+    const byVotes = (a: any, b: any) => groupVotes(b) - groupVotes(a)
+    const sorter = retro?.sortByVotes ? byVotes : byPosition
+
+    good = good.sort(sorter)
+    bad = bad.sort(sorter)
+    action = action.sort(sorter)
 
     return {
       good,
@@ -211,7 +252,7 @@ export default function Retro(props: RetroProps) {
       action,
       children: actionChildren,
     }
-  }, [notes])
+  }, [notes, retro?.sortByVotes])
 
   const formatDate = (date: any) =>
     new Date(date).toLocaleDateString('en-US', {
@@ -270,6 +311,33 @@ export default function Retro(props: RetroProps) {
     },
   ]
 
+  // Owner-only board controls. The self-vote / budget rules these drive are
+  // enforced server-side in Convex — this menu is just the control surface.
+  // `retroId` (the route param) is the always-defined id; `retro._id` from the
+  // query is optional because the doc may not be loaded yet.
+  if (isOwner) {
+    settingsMenuItems.push(
+      {
+        key: 'sort_by_votes',
+        label: 'Sort by most voted',
+        description: 'Order cards by total votes',
+        active: Boolean(retro?.sortByVotes),
+        onToggle: () =>
+          UpdateSortByVotes({ id: retroId, sortByVotes: !retro?.sortByVotes }),
+      },
+      {
+        key: 'max_likes',
+        label: 'Max votes per person',
+        description: 'How many likes each person can spend',
+        value: retro?.maxLikes ?? 3,
+        min: 1,
+        max: 20,
+        onChange: (value: number) =>
+          UpdateMaxLikes({ id: retroId, maxLikes: value }),
+      },
+    )
+  }
+
   // const showGenerateActionItemsButton =
   //   parsedNotes.bad.length > 0 &&
   //   parsedNotes.action.length === 0 &&
@@ -323,14 +391,16 @@ export default function Retro(props: RetroProps) {
             </div>
             {!hasName && <NotLoggedAlert onAction={promptName} />}
             <div className="grid md:grid-cols-3 gap-6">
-              <div className="w-full bg-zinc-100 rounded-lg p-4">
-                <div className="flex justify-between">
-                  <div className="mb-4 flex items-center gap-1.5">
-                    <p className="text-lg text-zinc-500">{goodLabel}</p>
+              <div className={columnClassName}>
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-lg font-medium text-zinc-600">
+                      {goodLabel}
+                    </p>
                     {isOwner && (
                       <button
                         type="button"
-                        onClick={() => setEditColumnsOpen(true)}
+                        onClick={() => openEditColumns('good')}
                         title="Rename columns"
                         aria-label="Rename columns"
                         className="text-zinc-300 hover:text-indigo-500 transition-colors"
@@ -339,7 +409,9 @@ export default function Retro(props: RetroProps) {
                       </button>
                     )}
                   </div>
-                  <p className="text-zinc-400">{parsedNotes.good?.length}</p>
+                  <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-white px-2 text-xs font-medium text-zinc-400 ring-1 ring-zinc-200">
+                    {parsedNotes.good?.length}
+                  </span>
                 </div>
                 {hasName && (
                   <NoteForm
@@ -351,6 +423,7 @@ export default function Retro(props: RetroProps) {
                     users={users}
                   />
                 )}
+                {parsedNotes.good.length === 0 && <EmptyColumn />}
                 {parsedNotes.good && (
                   <SortableContext
                     items={parsedNotes.good}
@@ -378,14 +451,16 @@ export default function Retro(props: RetroProps) {
                   </SortableContext>
                 )}
               </div>
-              <div className="w-full bg-zinc-100 rounded-lg p-4">
-                <div className="flex justify-between">
-                  <div className="mb-4 flex items-center gap-1.5">
-                    <p className="text-lg text-zinc-500">{badLabel}</p>
+              <div className={columnClassName}>
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-lg font-medium text-zinc-600">
+                      {badLabel}
+                    </p>
                     {isOwner && (
                       <button
                         type="button"
-                        onClick={() => setEditColumnsOpen(true)}
+                        onClick={() => openEditColumns('bad')}
                         title="Rename columns"
                         aria-label="Rename columns"
                         className="text-zinc-300 hover:text-indigo-500 transition-colors"
@@ -394,7 +469,9 @@ export default function Retro(props: RetroProps) {
                       </button>
                     )}
                   </div>
-                  <p className="text-zinc-400">{parsedNotes.bad?.length}</p>
+                  <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-white px-2 text-xs font-medium text-zinc-400 ring-1 ring-zinc-200">
+                    {parsedNotes.bad?.length}
+                  </span>
                 </div>
                 {hasName && (
                   <NoteForm
@@ -406,6 +483,7 @@ export default function Retro(props: RetroProps) {
                     users={users}
                   />
                 )}
+                {parsedNotes.bad.length === 0 && <EmptyColumn />}
                 {parsedNotes.bad && (
                   <SortableContext
                     items={parsedNotes.bad}
@@ -433,14 +511,16 @@ export default function Retro(props: RetroProps) {
                   </SortableContext>
                 )}
               </div>
-              <div className="w-full bg-zinc-100 rounded-lg p-4">
-                <div className="flex justify-between">
-                  <div className="text-lg text-zinc-500 mb-4 flex items-center gap-1.5 w-full">
-                    <span>{actionLabel}</span>
+              <div className={columnClassName}>
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-medium text-zinc-600">
+                      {actionLabel}
+                    </span>
                     {isOwner && (
                       <button
                         type="button"
-                        onClick={() => setEditColumnsOpen(true)}
+                        onClick={() => openEditColumns('action')}
                         title="Rename columns"
                         aria-label="Rename columns"
                         className="text-zinc-300 hover:text-indigo-500 transition-colors"
@@ -450,12 +530,14 @@ export default function Retro(props: RetroProps) {
                     )}
                     {isGenerating && (
                       <Sparkles
-                        className="mr-2 h-4 w-4 text-violet-800 generating-action-items-intermittent"
+                        className="h-4 w-4 text-violet-800 generating-action-items-intermittent"
                         strokeWidth="1"
                       />
                     )}
                   </div>
-                  <p className="text-zinc-400">{parsedNotes.action?.length}</p>
+                  <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-white px-2 text-xs font-medium text-zinc-400 ring-1 ring-zinc-200">
+                    {parsedNotes.action?.length}
+                  </span>
                 </div>
                 {hasName && (
                   <NoteForm
@@ -467,6 +549,8 @@ export default function Retro(props: RetroProps) {
                     users={users}
                   />
                 )}
+                {parsedNotes.action.length === 0 &&
+                  !showGenerateActionItemsButton && <EmptyColumn />}
                 {parsedNotes.action && (
                   <SortableContext
                     items={parsedNotes.action}
@@ -543,6 +627,7 @@ export default function Retro(props: RetroProps) {
                   goodLabel={goodLabel}
                   badLabel={badLabel}
                   actionLabel={actionLabel}
+                  focusColumn={focusColumn}
                 />
               </>
             )}

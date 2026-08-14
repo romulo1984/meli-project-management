@@ -1,6 +1,7 @@
 import React from 'react'
 import Participants from '@/components/participants'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { IconDefinition } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Link from 'next/link'
@@ -48,12 +49,20 @@ export default function RetroCard(props: RetroCardProps) {
   const { retro, isOwner, actions, ...rest } = props
 
   return (
-    <Card {...rest}>
+    <Card
+      {...rest}
+      className={cn(
+        'rounded-2xl border-zinc-200/70 shadow-sm transition-shadow hover:shadow-md',
+        props.className,
+      )}
+    >
       <CardHeader>
         <div className="flex justify-between gap-x-6">
           <div>
             <Link href={`/retro/${retro?._id}`}>
-              <CardTitle className="mb-1">{retro?.name}</CardTitle>
+              <CardTitle className="mb-1 transition-colors hover:text-indigo-600">
+                {retro?.name}
+              </CardTitle>
             </Link>
             <CardDescription>
               Created by {retro?.owner?.name ?? ''}

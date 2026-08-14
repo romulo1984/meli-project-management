@@ -96,6 +96,13 @@ export default function Note(props: NoteProps) {
             roundTop={false}
             roundBottom={i === childrenNotes.length - 1}
             mergeMode={mergeMode}
+            // A merged group selects/hovers as ONE unit: children share the
+            // group's selectable + selected state and route clicks to the
+            // parent's toggle. No `selectionIndex`, so only the parent shows the
+            // order badge.
+            selectable={selectable}
+            selected={selected}
+            onSelectToggle={() => toggleNote && toggleNote(note)}
             generateActionItems={generateActionItems}
             isGenerating={isGenerating}
           />

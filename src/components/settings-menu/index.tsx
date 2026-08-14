@@ -12,10 +12,12 @@ import { cn } from '@/lib/utils'
 /**
  * The settings menu renders a list of rows inside a gear-triggered popover.
  *
- * A row is one of two shapes — a clean superset:
- *   - a TOGGLE row (`active` + `onToggle`) shown as an on/off switch, or
+ * A row is one of three shapes — a clean superset:
+ *   - a TOGGLE row (`active` + `onToggle`) shown as an on/off switch,
  *   - an ACTION row (`onSelect`) shown as a clickable row with a chevron
- *     affordance that runs the callback and closes the popover.
+ *     affordance that runs the callback and closes the popover, or
+ *   - a STEPPER row (`value` + `onChange`) shown as a `−  value  +` numeric
+ *     control that respects `min`/`max` and leaves the popover open.
  *
  * The API is intentionally minimal and self-contained so new settings can be
  * added by the caller with a single object literal — no changes to this file.
@@ -38,7 +40,23 @@ export interface SettingsMenuActionItem extends SettingsMenuItemBase {
   onSelect: () => void
 }
 
-export type SettingsMenuItem = SettingsMenuToggleItem | SettingsMenuActionItem
+/** A bounded integer setting shown as a `−  value  +` stepper. */
+export interface SettingsMenuStepperItem extends SettingsMenuItemBase {
+  value: number
+  min: number
+  max?: number
+  onChange: (value: number) => void
+}
+
+export type SettingsMenuItem =
+  | SettingsMenuToggleItem
+  | SettingsMenuActionItem
+  | SettingsMenuStepperItem
+
+// Stepper rows are the ones that expose `onChange`.
+function isStepperItem(item: SettingsMenuItem): item is SettingsMenuStepperItem {
+  return 'onChange' in item
+}
 
 // Action rows are the ones that expose `onSelect`; everything else is a toggle.
 function isActionItem(item: SettingsMenuItem): item is SettingsMenuActionItem {
@@ -69,6 +87,55 @@ function RowLabel({
       {description && (
         <span className="text-xs text-zinc-400">{description}</span>
       )}
+    </span>
+  )
+}
+
+// `−  value  +` numeric control. Presentational + self-contained: it clamps to
+// [min, max] by disabling the button at each bound and never emits a value out
+// of range. The consumer's own handler should still validate/clamp server-side.
+function Stepper({
+  value,
+  min,
+  max,
+  disabled,
+  onChange,
+}: {
+  value: number
+  min: number
+  max?: number
+  disabled?: boolean
+  onChange: (value: number) => void
+}) {
+  const canDecrease = !disabled && value > min
+  const canIncrease = !disabled && (max === undefined || value < max)
+
+  const stepButton =
+    'flex h-6 w-6 items-center justify-center rounded-md border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500'
+
+  return (
+    <span className="flex shrink-0 items-center gap-1.5">
+      <button
+        type="button"
+        aria-label="Decrease"
+        disabled={!canDecrease}
+        onClick={() => canDecrease && onChange(value - 1)}
+        className={stepButton}
+      >
+        −
+      </button>
+      <span className="w-5 text-center text-sm font-medium tabular-nums text-zinc-700">
+        {value}
+      </span>
+      <button
+        type="button"
+        aria-label="Increase"
+        disabled={!canIncrease}
+        onClick={() => canIncrease && onChange(value + 1)}
+        className={stepButton}
+      >
+        +
+      </button>
     </span>
   )
 }
@@ -120,7 +187,24 @@ export default function SettingsMenu({ items }: SettingsMenuProps) {
         </div>
         <div className="flex flex-col p-1.5">
           {items.map(item =>
-            isActionItem(item) ? (
+            isStepperItem(item) ? (
+              <div
+                key={item.key}
+                className={cn(
+                  'flex items-center justify-between gap-3 rounded-md px-2.5 py-2',
+                  item.disabled && 'opacity-50',
+                )}
+              >
+                <RowLabel label={item.label} description={item.description} />
+                <Stepper
+                  value={item.value}
+                  min={item.min}
+                  max={item.max}
+                  disabled={item.disabled}
+                  onChange={item.onChange}
+                />
+              </div>
+            ) : isActionItem(item) ? (
               <button
                 key={item.key}
                 type="button"

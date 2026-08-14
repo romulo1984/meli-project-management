@@ -1,5 +1,6 @@
 import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
+import { clampMaxLikes } from './retros'
 
 export const getRetroNotes = query({
   args: { retroId: v.id('retros') },
@@ -65,22 +66,64 @@ export const remove = mutation({
   },
 })
 
+// Result of a likeToggle attempt. `reason` explains a refusal so the client can
+// react (e.g. show a toast when the vote budget is spent).
+type LikeToggleResult = { ok: boolean; reason?: 'self' | 'budget' }
+
+// Toggle the current user's like on a note. All voting rules are enforced
+// SERVER-SIDE from persisted state (never trust a client-supplied tally):
+//   - no self-vote: you cannot like your own card;
+//   - per-person budget: adding a like is refused once the user has spent their
+//     whole budget (retro.maxLikes, default 3) across the retro;
+//   - removing a like is always allowed.
 export const likeToggle = mutation({
   args: { noteId: v.id('notes'), userId: v.id('users') },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<LikeToggleResult> => {
     const note = await ctx.db.get(args.noteId)
-    if (note) {
-      const likes = note.likes || []
-      const index = likes.indexOf(args.userId)
-      if (index === -1) {
-        likes.push(args.userId)
-      } else {
-        likes.splice(index, 1)
-      }
-      await ctx.db.patch(note._id, { likes })
-      return likes
+    if (!note) {
+      return { ok: false }
     }
-    return []
+
+    // No self-vote — checked against the note's real author in the DB, not a
+    // client claim (CWE-841 business-logic abuse).
+    if (note.userId === args.userId) {
+      return { ok: false, reason: 'self' }
+    }
+
+    const likes = note.likes || []
+    const index = likes.indexOf(args.userId)
+
+    // Removing an existing like is always allowed.
+    if (index !== -1) {
+      likes.splice(index, 1)
+      await ctx.db.patch(note._id, { likes })
+      return { ok: true }
+    }
+
+    // Adding a like: enforce the per-person budget for the whole retro. Votes
+    // already spent are counted from PERSISTED state, so the client cannot
+    // over-vote by lying about its remaining budget (CWE-841).
+    const retro = await ctx.db.get(note.retroId)
+    const maxLikes = clampMaxLikes(retro?.maxLikes)
+
+    const retroNotes = await ctx.db
+      .query('notes')
+      .withIndex('by_retro_id', q => q.eq('retroId', note.retroId))
+      .collect()
+
+    const used = retroNotes.reduce(
+      (count, current) =>
+        count + ((current.likes || []).includes(args.userId) ? 1 : 0),
+      0,
+    )
+
+    if (used >= maxLikes) {
+      return { ok: false, reason: 'budget' }
+    }
+
+    likes.push(args.userId)
+    await ctx.db.patch(note._id, { likes })
+    return { ok: true }
   },
 })
 

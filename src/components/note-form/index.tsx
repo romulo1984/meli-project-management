@@ -4,7 +4,6 @@ import useVoiceToText from "@/helpers/voiceToText";
 import { useEffect } from "react";
 import { MentionsInput, Mention } from "react-mentions";
 import { Doc } from "@convex/_generated/dataModel";
-import Image from "next/image";
 
 type Note = {
   body: string;
@@ -49,7 +48,8 @@ export default function NoteForm(props: NoteFormProps) {
     _focused: boolean
   ) => (
     <div className="inside-item">
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         width={24}
         height={24}
         className="w-6 h-6 me-2 rounded-full"

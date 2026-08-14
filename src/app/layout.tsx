@@ -4,6 +4,7 @@ import { Roboto } from "next/font/google";
 import ConvexClientProvider from "../contexts/ConvexClientProvider";
 import Navbar from "@/components/navbar";
 import { InitUser } from "@/helpers/InitUser";
+import { CLERK_AUTH_ENABLED } from "@/config/features";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -29,7 +30,8 @@ export default function RootLayout({ children }: LayoutProps) {
       <body className={roboto.className}>
         <ConvexClientProvider>
           <Navbar />
-          <InitUser />
+          {/* InitUser syncs the Clerk user into Convex; only needed when Clerk is on. */}
+          {CLERK_AUTH_ENABLED && <InitUser />}
           {children}
           <ToastContainer />
         </ConvexClientProvider>

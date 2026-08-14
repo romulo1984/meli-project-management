@@ -1,8 +1,8 @@
-import { useUser } from "@clerk/nextjs";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
+import { useIdentity } from "@/contexts/IdentityProvider";
 import { NotesShowingStatus, Settings } from "./useSettings";
 
 interface useRetroProps {
@@ -12,14 +12,16 @@ interface useRetroProps {
 const useRetro = (props: useRetroProps) => {
   const { retroId } = props;
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useUser();
+  const { userId } = useIdentity();
 
   const UpdateTimer = useMutation(api.retros.updateTimer);
   const retro = useQuery(api.retros.get, { id: retroId });
   const notes = retro?.notes;
   const users = retro?.users;
 
-  const me = users?.find((u) => u?.tokenIdentifier === user?.id);
+  // Match the current user by their Convex id (the local token is never
+  // exposed to clients — see IdentityProvider / localIdentity security notes).
+  const me = users?.find((u) => u?._id === userId);
   const settings: Settings = {
     notesShowingStatus: {
       key: "notes_showing_status",

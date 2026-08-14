@@ -5,7 +5,6 @@ import SpechText from '@/helpers/spechText'
 import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
 import { useMutation } from 'convex/react'
-import Image from 'next/image'
 import { useMemo, useState, useRef, useCallback } from 'react'
 import DropdownSelect from '../dropdownSelect'
 import { AnonymousIcon, LikeIcon } from '../icons'
@@ -146,7 +145,8 @@ export default function NoteCard(props: NoteProps) {
 
     return (
       <div>
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           alt={user?.name || ''}
           className="w-5 h-5 rounded-full inline-block mr-2"
           src={user?.avatar || ''}

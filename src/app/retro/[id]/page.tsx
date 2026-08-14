@@ -12,7 +12,7 @@ import { useJoinRetro } from '@/helpers/hooks/useJoinRetro'
 import useRetro from '@/helpers/hooks/useRetro'
 import useSelectedNotes from '@/helpers/hooks/useSelectedNotes'
 import useSettings from '@/helpers/hooks/useSettings'
-import { useUser } from '@clerk/nextjs'
+import { useIdentity } from '@/contexts/IdentityProvider'
 import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useMutation } from 'convex/react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { confirmAlert } from 'react-confirm-alert'
 import 'react-confirm-alert/src/react-confirm-alert.css'
 import { useGenerateActionItems } from '@/helpers/hooks/useGenerateActionItems'
@@ -89,8 +89,14 @@ export default function Retro(props: RetroProps) {
   const CreateNote = useMutation(api.notes.store)
   const UpdatePositions = useMutation(api.notes.updatePositions)
   const MergeNotes = useMutation(api.notes.merge)
-  const { isSignedIn } = useUser()
+  const { hasName, ready, promptName } = useIdentity()
   useJoinRetro({ retroId })
+
+  useEffect(() => {
+    // First time in a retro (e.g. via a shared link) → ask for a display name
+    // so the person's notes and joins are attributed.
+    if (ready && !hasName) promptName()
+  }, [ready, hasName, promptName])
   const { handleSettingChange } = useSettings({
     retroId: retroId,
   })
@@ -264,7 +270,7 @@ export default function Retro(props: RetroProps) {
       label: settings.notesShowingStatus.label,
       name: settings.notesShowingStatus.key,
       selected: settings.notesShowingStatus.value === 'hidden',
-      disabled: !isSignedIn,
+      disabled: !hasName,
     })
 
     return items
@@ -273,7 +279,7 @@ export default function Retro(props: RetroProps) {
   // const showGenerateActionItemsButton =
   //   parsedNotes.bad.length > 0 &&
   //   parsedNotes.action.length === 0 &&
-  //   isSignedIn &&
+  //   hasName &&
   //   settings.notesShowingStatus.value !== 'hidden'
 
   // Disabled AI action items generation to all bad notes
@@ -308,7 +314,7 @@ export default function Retro(props: RetroProps) {
                   background="slate-50"
                   items={settingsDropdownItems()}
                   onItemPressed={(name: string) => {
-                    if (!isSignedIn) return
+                    if (!hasName) return
                     handleSettingChange(name, settings)
                   }}
                 />
@@ -323,14 +329,14 @@ export default function Retro(props: RetroProps) {
                 <Participants users={users} />
               </div>
             </div>
-            {!isSignedIn && <NotLoggedAlert />}
+            {!hasName && <NotLoggedAlert onAction={promptName} />}
             <div className="grid md:grid-cols-3 gap-6">
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
                   <h3 className="text-lg text-zinc-500 mb-4">Good</h3>
                   <p className="text-zinc-400">{parsedNotes.good?.length}</p>
                 </div>
-                {isSignedIn && (
+                {hasName && (
                   <NoteForm
                     opened={opened.good}
                     toggleOpened={() => toggleOpened('good')}
@@ -369,7 +375,7 @@ export default function Retro(props: RetroProps) {
                   <h3 className="text-lg text-zinc-500 mb-4">Bad</h3>
                   <p className="text-zinc-400">{parsedNotes.bad?.length}</p>
                 </div>
-                {isSignedIn && (
+                {hasName && (
                   <NoteForm
                     opened={opened.bad}
                     toggleOpened={() => toggleOpened('bad')}
@@ -416,7 +422,7 @@ export default function Retro(props: RetroProps) {
                   </h3>
                   <p className="text-zinc-400">{parsedNotes.action?.length}</p>
                 </div>
-                {isSignedIn && (
+                {hasName && (
                   <NoteForm
                     opened={opened.action}
                     toggleOpened={() => toggleOpened('action')}
@@ -471,7 +477,7 @@ export default function Retro(props: RetroProps) {
                           note={note}
                           users={users}
                           me={me}
-                          actionType={isSignedIn}
+                          actionType={hasName}
                           blur={settings.notesShowingStatus.value === 'hidden'}
                           childrenNotes={parsedNotes.children[note._id]}
                           selectedNotes={selectedNotes}

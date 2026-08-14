@@ -1,33 +1,34 @@
 "use client";
 import { useState } from "react";
-import Lottie from "react-lottie-player";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 
 import lootieAnimation from "../animations/animation.json";
 import Button from "@/components/button";
+import { useIdentity } from "@/contexts/IdentityProvider";
 
-let window: any = global;
-
-const mountRedirectUrl = (path: string) => {
-  return `${window.location.protocol}//${window.location.host}/${path}`;
-};
+// Client-only: lottie-web touches `document` at load, so keep it out of SSR.
+const Lottie = dynamic(() => import("react-lottie-player"), { ssr: false });
 
 export default function Home() {
   const [creatingRetro, setCreatingRetro] = useState(false);
-  const { isSignedIn, user } = useUser();
   const router = useRouter();
+  const { ready, anonId, ensureIdentity } = useIdentity();
   const StoreRetro = useMutation(api.retros.store);
 
   const CreateRetro = async () => {
+    if (creatingRetro) return;
     setCreatingRetro(true);
-    if (!isSignedIn) {
-      router.push(`/sign-in?redirect_url=${mountRedirectUrl("new")}`);
-    } else {
-      const retroId = await StoreRetro({ ownerId: user.id });
+    try {
+      // Prompt for a display name on first use, then create the retro.
+      const userId = await ensureIdentity();
+      if (!userId || !anonId) return; // user dismissed the name prompt
+      const retroId = await StoreRetro({ ownerId: anonId });
       router.push(`/retro/${retroId}`);
+    } finally {
+      setCreatingRetro(false);
     }
   };
 
@@ -40,7 +41,7 @@ export default function Home() {
         <h2 className="text-3xl font-medium text-slate-500 mb-6">
           it&rsquo;s just an <span className="font-semibold">if</span>
         </h2>
-        <Button disabled={creatingRetro} handleClick={CreateRetro}>
+        <Button disabled={!ready || creatingRetro} handleClick={CreateRetro}>
           Create a new Retro
         </Button>
       </div>

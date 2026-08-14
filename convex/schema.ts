@@ -6,6 +6,10 @@ export default defineSchema({
     name: v.string(),
     avatar: v.optional(v.string()),
     tokenIdentifier: v.string(),
+    // Optional, unused by the current app (feature/encrypted-notes compat) — see notes table.
+    publicKey: v.optional(v.string()),
+    encryptedPrivateKey: v.optional(v.string()),
+    encryptedPrivateKeyRecovery: v.optional(v.string()),
   }).index('by_token', ['tokenIdentifier']),
   notes: defineTable({
     body: v.string(),
@@ -17,6 +21,12 @@ export default defineSchema({
     likes: v.optional(v.array(v.id('users'))),
     position: v.optional(v.number()),
     assignedTo: v.optional(v.id('users')),
+    // Optional, unused by the current app. Present so `convex dev` schema
+    // validation passes against pre-existing encrypted-notes documents in the
+    // dev deployment (from the feature/encrypted-notes experiment).
+    ciphertext: v.optional(v.string()),
+    iv: v.optional(v.string()),
+    keyVersion: v.optional(v.number()),
   }).index('by_retro_id', ['retroId']),
   retros: defineTable({
     name: v.string(),
@@ -26,6 +36,9 @@ export default defineSchema({
     timerStatus: v.optional(v.string()),
     notesShowingStatus: v.optional(v.string()),
     status: v.optional(v.string()),
+    // Optional, unused by the current app (feature/encrypted-notes compat) — see notes table.
+    encryptionEnabled: v.optional(v.boolean()),
+    keyVersion: v.optional(v.number()),
   }).index('by_owner_id', ['ownerId']),
   users_retro: defineTable({
     userId: v.id('users'),

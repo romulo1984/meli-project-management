@@ -1,25 +1,29 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "convex/react";
-import { useUser } from "@clerk/nextjs";
 import { api } from "@convex/_generated/api";
-import { Id } from "@convex/_generated/dataModel";
+import { useIdentity } from "@/contexts/IdentityProvider";
 
 const useMyRetros = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useUser();
+  const { userId, ready } = useIdentity();
 
-  const me = useQuery(api.users.getByToken, {
-    tokenIdentifier: user?.id || "",
-  });
+  // myRetros returns undefined when no userId is provided, so passing
+  // `undefined` is a safe no-op until the local identity is ready.
   const retros = useQuery(api.retros.myRetros, {
-    userId: me?._id as Id<"users">,
+    userId: userId ?? undefined,
   });
+
+  // We already know the current user's Convex id from the local identity;
+  // no extra query needed for ownership checks.
+  const me = userId ? { _id: userId } : undefined;
 
   useEffect(() => {
-    if (retros) {
+    // Stop loading once retros arrive, or once we know there's no identity yet
+    // (ready but nameless → nothing to show).
+    if (retros || (ready && !userId)) {
       setIsLoading(false);
     }
-  }, [retros]);
+  }, [retros, ready, userId]);
 
   return {
     isLoading,

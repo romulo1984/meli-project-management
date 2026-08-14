@@ -9,13 +9,18 @@ export const join = mutation({
       .withIndex('by_token', q => q.eq('tokenIdentifier', args.userId))
       .unique()
 
+    if (!user) return
+
+    // Dedup against the resolved Convex user id. (The previous version compared
+    // the join row's `userId` id-field to the raw token string, so it never
+    // matched and every visit inserted a duplicate membership row.)
     const existingUserInRetro = await ctx.db
       .query('users_retro')
       .withIndex('by_retro_id', q => q.eq('retroId', args.retroId))
-      .filter(q => q.eq('userId', args.userId))
+      .filter(q => q.eq(q.field('userId'), user._id))
       .unique()
 
-    if (user && !existingUserInRetro) {
+    if (!existingUserInRetro) {
       return ctx.db.insert('users_retro', {
         retroId: args.retroId,
         userId: user._id,

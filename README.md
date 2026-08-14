@@ -16,7 +16,8 @@ for every participant.
 
 - 🟢🔴🟣 **Three-column retro board** — Good / Bad / Actions.
 - ⚡ **Real-time collaboration** — all changes sync instantly via Convex.
-- 🔐 **Sign in with Google** (Clerk); anyone with the link can join a board.
+- 🙋 **No sign-up** — pick a display name and go; anyone with the link can join. Your
+  identity is stored locally and you can rename yourself anytime.
 - 🙈 **Anonymous notes** and a **hide/blur mode** to keep notes hidden until reveal.
 - 👍 **Likes**, **assign action items** to participants, and **drag & drop** to reorder.
 - 🧲 **Merge notes** — drag one card onto another, or multi-select and merge.
@@ -29,16 +30,16 @@ for every participant.
 
 - **[Next.js 13](https://nextjs.org/)** (App Router) + **React 18** + **TypeScript**
 - **[Convex](https://convex.dev/)** — reactive database and serverless backend
-- **[Clerk](https://clerk.com/)** — authentication (Google sign-in), integrated with Convex
+- **Anonymous local identity** (localStorage) — no auth provider needed.
+  [Clerk](https://clerk.com/) login is preserved but deprecated behind a feature flag.
 - **[Vercel AI SDK](https://sdk.vercel.ai/)** with OpenAI & Anthropic providers
 - **[ElevenLabs](https://elevenlabs.io/)** — text-to-speech
 - **Tailwind CSS** + **[shadcn/ui](https://ui.shadcn.com/)** (Radix UI), **dnd-kit**, Lottie
 
 ## Prerequisites
 
-- **Node.js `v18.3`** (see [`.nvmrc`](./.nvmrc)) — `nvm use` if you have nvm.
+- **Node.js `24.x`** (see [`.nvmrc`](./.nvmrc)) — `nvm use` if you have nvm.
 - A free **[Convex](https://convex.dev/)** account.
-- A free **[Clerk](https://clerk.com/)** account.
 - *(Optional)* OpenAI / Anthropic and ElevenLabs API keys for the AI and speech features.
 
 ## Setup
@@ -49,51 +50,42 @@ Install dependencies:
 npm ci
 ```
 
-### 1. Create a Clerk application (Google sign-in)
+### 1. Create a Convex project
 
-Create an application on Clerk and enable the **Google** option:
+Sign up at [convex.dev](https://convex.dev) and create a new project. No auth provider or
+Clerk setup is needed — the app is anonymous.
 
-![Clerk - step 1: create an application with the Google option](./docs/clerk-1.png)
+### 2. Configure local environment variables
 
-### 2. Create a Convex JWT template in Clerk
-
-Go to **JWT Templates** in the Clerk dashboard and create one using the **Convex** option:
-
-![Clerk - step 2: create a JWT Template](./docs/clerk-2.png)
-
-### 3. Create a Convex project
-
-Sign up at [convex.dev](https://convex.dev) and create a new project.
-
-### 4. Configure the `CLERK_JWT_ISSUER_DOMAIN` on Convex
-
-In the Convex dashboard, go to **Settings → Environment Variables → + Add** and create
-`CLERK_JWT_ISSUER_DOMAIN`. Its value is the **Issuer** shown on the JWT template you
-created in Clerk — something like `https://<your-subdomain>.clerk.accounts.dev`.
-
-### 5. Configure local environment variables
-
-Copy the example file and fill in your keys:
+Copy the example file:
 
 ```shell
 cp env.example .env.local
 ```
 
-| Variable                            | Where            | Purpose                                            |
-| ----------------------------------- | ---------------- | -------------------------------------------------- |
-| `CONVEX_DEPLOYMENT`                 | `.env.local`     | Written automatically by `npm run convex:dev`.     |
-| `NEXT_PUBLIC_CONVEX_URL`            | `.env.local`     | Convex endpoint (public).                          |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `.env.local`     | Clerk publishable key (public).                    |
-| `CLERK_SECRET_KEY`                  | `.env.local`     | Clerk server key (**secret**).                     |
-| `CLERK_JWT_ISSUER_DOMAIN`           | Convex dashboard | Set in step 4 (not in `.env.local`).               |
-| `OPENAI_API_KEY`                    | `.env.local`     | Optional — AI action items (**secret**).           |
-| `ANTHROPIC_API_KEY`                 | `.env.local`     | Optional — AI action items (**secret**).           |
-| `ELEVEN_LABS_API_KEY`               | `.env.local`     | Optional — text-to-speech (**secret**).            |
+| Variable                | Where        | Purpose                                        |
+| ----------------------- | ------------ | ---------------------------------------------- |
+| `CONVEX_DEPLOYMENT`     | `.env.local` | Written automatically by `npm run convex:dev`. |
+| `NEXT_PUBLIC_CONVEX_URL`| `.env.local` | Convex endpoint (public).                      |
+| `OPENAI_API_KEY`        | `.env.local` | Optional — AI action items (**secret**).       |
+| `ANTHROPIC_API_KEY`     | `.env.local` | Optional — AI action items (**secret**).       |
+| `ELEVEN_LABS_API_KEY`   | `.env.local` | Optional — text-to-speech (**secret**).        |
 
 > `.env.local` is gitignored — never commit real secret values. `NEXT_PUBLIC_*` values
 > are inlined into the client bundle and are public by design.
 
-### 6. Start the dev servers
+<details>
+<summary>Reviving Clerk login (optional / legacy)</summary>
+
+Login is deprecated: `CLERK_AUTH_ENABLED` in `src/config/features.ts` is `false`. To bring
+it back, set it to `true` and provide the Clerk env vars
+(`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `CLERK_JWT_ISSUER_DOMAIN` in
+the Convex dashboard). The original Clerk setup (create a Clerk app with Google, add a
+Convex JWT template) is still wired in the codebase and its screenshots live in `docs/`.
+
+</details>
+
+### 3. Start the dev servers
 
 In one terminal:
 

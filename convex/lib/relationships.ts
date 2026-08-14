@@ -21,6 +21,18 @@ export async function asyncMap<FromType, ToType>(
 }
 
 /**
+ * Redact a user document before returning it to clients.
+ *
+ * In the anonymous identity model the `tokenIdentifier` is a local *bearer
+ * capability* (whoever holds it can act as that user), so it must never be
+ * broadcast to other participants. This blanks it while preserving the
+ * document shape (CWE-639 — avoid exposing a user-controlled key).
+ */
+export function toPublicUser(user: Doc<'users'> | null): Doc<'users'> | null {
+  return user ? { ...user, tokenIdentifier: '' } : user
+}
+
+/**
  * getAll returns a list of Documents corresponding to the `Id`s passed in.
  * @param db A database object, usually passed from a mutation or query ctx.
  * @param ids An list (or other iterable) of Ids pointing to a table.

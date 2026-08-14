@@ -36,6 +36,12 @@ export default defineSchema({
     timerStatus: v.optional(v.string()),
     notesShowingStatus: v.optional(v.string()),
     status: v.optional(v.string()),
+    // Highlight mode: a single participant controls highlighting at a time.
+    // `highlightControllerId` is the current controller (a server-enforced lock);
+    // `highlightedNoteId` is the card everyone should see highlighted. Both are
+    // optional/backward-compatible (undefined = highlight mode off / nothing highlighted).
+    highlightControllerId: v.optional(v.id('users')),
+    highlightedNoteId: v.optional(v.id('notes')),
     // Optional custom display labels for the three columns. When unset/empty the
     // client falls back to the hardcoded defaults ("Good"/"Bad"/"Actions").
     goodLabel: v.optional(v.string()),

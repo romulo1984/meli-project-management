@@ -15,6 +15,7 @@ interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
   selectedPipeline?: string | null
   selectedNotes?: Doc<'notes'>[]
   toggleNote?: (note: Doc<'notes'>) => void
+  highlighted?: boolean
 }
 
 export default function Note(props: NoteProps) {
@@ -29,6 +30,7 @@ export default function Note(props: NoteProps) {
     selectedPipeline = null,
     selectedNotes = [],
     toggleNote,
+    highlighted = false,
     ...rest
   } = props
 
@@ -60,7 +62,7 @@ export default function Note(props: NoteProps) {
     <div
       className={`merge-container ${
         isGenerating ? 'generating-action-items-intermittent' : ''
-      } ${dimmed ? 'opacity-50' : ''}`}
+      } ${dimmed ? 'opacity-50' : ''} ${highlighted ? 'highlighted' : ''}`}
     >
       <NoteCard
         {...rest}

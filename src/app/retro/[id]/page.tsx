@@ -8,7 +8,9 @@ import NoteForm from '@/components/note-form'
 import Participants from '@/components/participants'
 import { Sortable } from '@/components/sortable'
 import Timer from '@/components/timer'
+import SettingsMenu, { SettingsMenuItem } from '@/components/settings-menu'
 import { useJoinRetro } from '@/helpers/hooks/useJoinRetro'
+import useHighlightMode from '@/helpers/hooks/useHighlightMode'
 import useRetro from '@/helpers/hooks/useRetro'
 import useSelectedNotes from '@/helpers/hooks/useSelectedNotes'
 import useSettings from '@/helpers/hooks/useSettings'
@@ -18,7 +20,6 @@ import { Doc, Id } from '@convex/_generated/dataModel'
 import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 import MergeModeBar from '@/components/merge-mode-bar'
-import SettingsMenu, { SettingsMenuItem } from '@/components/settings-menu'
 import {
   DndContext,
   DragEndEvent,
@@ -112,6 +113,24 @@ export default function Retro(props: RetroProps) {
     items: notes?.filter(n => n.pipeline === 'bad').map(n => n.body) || [],
   })
   const [selectedModel, setModel] = useState('claude-3-5-sonnet')
+
+  const { isController, isControlledByOther, highlightNote, toggle } =
+    useHighlightMode({
+      retroId,
+      userId: me?._id,
+      controllerId: retro?.highlightControllerId,
+    })
+  const highlightedNoteId = retro?.highlightedNoteId
+
+  // Hover handlers that broadcast the highlighted card — only wired up while
+  // the local user controls Highlight mode.
+  const highlightHandlers = (noteId: Id<'notes'>) =>
+    isController
+      ? {
+          onMouseEnter: () => highlightNote(noteId),
+          onMouseLeave: () => highlightNote(undefined),
+        }
+      : undefined
 
   // Column labels are owner-editable; fall back to the defaults when unset/empty.
   const goodLabel = retro?.goodLabel || 'Good'
@@ -239,6 +258,16 @@ export default function Retro(props: RetroProps) {
       active: mergeMode,
       onToggle: mergeMode ? exitMergeMode : enterMergeMode,
     },
+    {
+      key: 'highlight_mode',
+      label: 'Highlight mode',
+      description: isControlledByOther
+        ? 'In use by another participant'
+        : 'Point everyone to the card you hover',
+      active: isController,
+      disabled: !hasName || !me || isControlledByOther,
+      onToggle: toggle,
+    },
   ]
 
   if (canEditLabels) {
@@ -314,18 +343,21 @@ export default function Retro(props: RetroProps) {
                   >
                     {parsedNotes.good?.map(note => (
                       <Sortable key={note._id} id={note._id} disabled={mergeMode}>
-                        <Note
-                          key={note._id}
-                          note={note}
-                          users={users}
-                          me={me}
-                          blur={settings.notesShowingStatus.value === 'hidden'}
-                          childrenNotes={parsedNotes.children[note._id]}
-                          mergeMode={mergeMode}
-                          selectedPipeline={selectedPipeline}
-                          selectedNotes={selectedNotes}
-                          toggleNote={toggleNote}
-                        />
+                        <div className="w-full" {...highlightHandlers(note._id)}>
+                          <Note
+                            highlighted={highlightedNoteId === note._id}
+                            key={note._id}
+                            note={note}
+                            users={users}
+                            me={me}
+                            blur={settings.notesShowingStatus.value === 'hidden'}
+                            childrenNotes={parsedNotes.children[note._id]}
+                            mergeMode={mergeMode}
+                            selectedPipeline={selectedPipeline}
+                            selectedNotes={selectedNotes}
+                            toggleNote={toggleNote}
+                          />
+                        </div>
                       </Sortable>
                     ))}
                   </SortableContext>
@@ -353,18 +385,21 @@ export default function Retro(props: RetroProps) {
                   >
                     {parsedNotes.bad?.map(note => (
                       <Sortable key={note._id} id={note._id} disabled={mergeMode}>
-                        <Note
-                          key={note._id}
-                          note={note}
-                          users={users}
-                          me={me}
-                          blur={settings.notesShowingStatus.value === 'hidden'}
-                          childrenNotes={parsedNotes.children[note._id]}
-                          mergeMode={mergeMode}
-                          selectedPipeline={selectedPipeline}
-                          selectedNotes={selectedNotes}
-                          toggleNote={toggleNote}
-                        />
+                        <div className="w-full" {...highlightHandlers(note._id)}>
+                          <Note
+                            highlighted={highlightedNoteId === note._id}
+                            key={note._id}
+                            note={note}
+                            users={users}
+                            me={me}
+                            blur={settings.notesShowingStatus.value === 'hidden'}
+                            childrenNotes={parsedNotes.children[note._id]}
+                            mergeMode={mergeMode}
+                            selectedPipeline={selectedPipeline}
+                            selectedNotes={selectedNotes}
+                            toggleNote={toggleNote}
+                          />
+                        </div>
                       </Sortable>
                     ))}
                   </SortableContext>
@@ -429,22 +464,25 @@ export default function Retro(props: RetroProps) {
                     )}
                     {parsedNotes.action?.map(note => (
                       <Sortable key={note._id} id={note._id} disabled={mergeMode}>
-                        <Note
-                          className={
-                            isGenerating ? 'generating-action-items' : ''
-                          }
-                          key={note._id}
-                          note={note}
-                          users={users}
-                          me={me}
-                          actionType={hasName}
-                          blur={settings.notesShowingStatus.value === 'hidden'}
-                          childrenNotes={parsedNotes.children[note._id]}
-                          mergeMode={mergeMode}
-                          selectedPipeline={selectedPipeline}
-                          selectedNotes={selectedNotes}
-                          toggleNote={toggleNote}
-                        />
+                        <div className="w-full" {...highlightHandlers(note._id)}>
+                          <Note
+                            className={
+                              isGenerating ? 'generating-action-items' : ''
+                            }
+                            highlighted={highlightedNoteId === note._id}
+                            key={note._id}
+                            note={note}
+                            users={users}
+                            me={me}
+                            actionType={hasName}
+                            blur={settings.notesShowingStatus.value === 'hidden'}
+                            childrenNotes={parsedNotes.children[note._id]}
+                            mergeMode={mergeMode}
+                            selectedPipeline={selectedPipeline}
+                            selectedNotes={selectedNotes}
+                            toggleNote={toggleNote}
+                          />
+                        </div>
                       </Sortable>
                     ))}
                   </SortableContext>

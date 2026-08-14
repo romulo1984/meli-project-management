@@ -19,13 +19,22 @@ const linkClass =
   'text-slate-600 hover:text-slate-400 transition-colors'
 
 function Brand() {
+  // Subtle staggered "wave" lift of each segment on hover.
   return (
     <h1 className="text-2xl md:text-3xl font-bold">
-      <a href="/">
-        <span className="text-slate-400">/</span>
-        <span className="text-slate-600">retro</span>
-        <span className="text-pink-400">spec</span>
-        <span className="text-indigo-400">tool</span>
+      <a href="/" className="group inline-flex items-baseline">
+        <span className="inline-block text-slate-400 transition-transform duration-300 ease-out group-hover:-translate-y-1">
+          /
+        </span>
+        <span className="inline-block text-slate-600 transition-transform duration-300 ease-out [transition-delay:40ms] group-hover:-translate-y-1">
+          retro
+        </span>
+        <span className="inline-block text-pink-400 transition-transform duration-300 ease-out [transition-delay:80ms] group-hover:-translate-y-1">
+          spec
+        </span>
+        <span className="inline-block text-indigo-400 transition-transform duration-300 ease-out [transition-delay:120ms] group-hover:-translate-y-1">
+          tool
+        </span>
       </a>
     </h1>
   )
@@ -69,7 +78,7 @@ function AnonymousNav() {
             type="button"
             onClick={openRename}
             title="Edit your name"
-            className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-zinc-100 transition-colors"
+            className="flex items-center gap-2 rounded-full border border-zinc-200/70 pl-1 pr-3 py-1 hover:bg-zinc-100 transition-colors"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

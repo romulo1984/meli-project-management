@@ -377,8 +377,10 @@ export default function NoteCard(props: NoteProps) {
                     : 'Vote for this card'
               }
               className={cn(
-                'flex items-center justify-center gap-1',
-                isSelfNote ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+                'flex items-center justify-center gap-1 rounded-md px-2 py-1 transition-colors',
+                isSelfNote
+                  ? 'cursor-not-allowed opacity-60'
+                  : 'cursor-pointer hover:bg-zinc-100',
               )}
             >
               <LikeIcon liked={youLiked} />

@@ -9,11 +9,19 @@
 }
 
 .mentions-note-input {
-  @apply w-full mb-2 bg-zinc-200 rounded-lg hover:bg-zinc-300 text-slate-600;
+  @apply w-full mb-2 rounded-lg border border-zinc-200 bg-white text-slate-600 transition-colors;
+
+  &:focus-within {
+    @apply border-indigo-400 ring-2 ring-indigo-100;
+  }
 
   &__highlighter,
   &__input {
     @apply p-4 min-h-[128px];
+  }
+
+  &__input {
+    @apply outline-none;
   }
 
   &__suggestions {

@@ -17,10 +17,40 @@ const msInDisplayTimer = (ms: number) => {
   return { hours, minutes, seconds }
 }
 
+// Bounds for a custom timer duration (input validation).
+const MIN_TIMER_MS = 1000 // 1 second
+const MAX_TIMER_MS = 24 * 60 * 60 * 1000 // 24 hours
+const MAX_CUSTOM_MINUTES = MAX_TIMER_MS / 1000 / 60 // 1440
+
+// Strictly parse a user-entered minutes:seconds duration into a bounded number
+// of milliseconds. Returns null for empty / NaN / negative / non-integer /
+// out-of-range input so callers never persist a garbage timer value
+// (allowlist-style validation — CWE-20 / CWE-190). Values above the max are
+// clamped rather than rejected so long entries still resolve to a sane timer.
+const parseCustomDurationMs = (
+  minutesInput: string,
+  secondsInput: string
+): number | null => {
+  const minutes = Number(minutesInput.trim() === '' ? '0' : minutesInput)
+  const seconds = Number(secondsInput.trim() === '' ? '0' : secondsInput)
+
+  const isSafeCount = (n: number) => Number.isInteger(n) && n >= 0
+  if (!isSafeCount(minutes) || !isSafeCount(seconds)) return null
+
+  const totalMs = (minutes * 60 + seconds) * 1000
+  if (!Number.isFinite(totalMs) || totalMs < MIN_TIMER_MS) return null
+
+  return Math.min(totalMs, MAX_TIMER_MS)
+}
+
 export default function Timer (props: TimerProps) {
   const { timer, start, setTimer, startTimer, resetTimer, status } = props
   const [displayTimer, setDisplayTimer] = useState(msInDisplayTimer(timer))
   const [showTimeOptions, setShowTimeOptions] = useState(false)
+  const [showCustom, setShowCustom] = useState(false)
+  const [customMinutes, setCustomMinutes] = useState('')
+  const [customSeconds, setCustomSeconds] = useState('')
+  const [customError, setCustomError] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
 
   const handleShowTimeOptions = useCallback(() => {
@@ -29,8 +59,46 @@ export default function Timer (props: TimerProps) {
 
   const handleSetTimer = useCallback((ms: number) => {
     setTimer(ms)
+    setShowCustom(false)
     setShowTimeOptions(false)
-  }, [])
+  }, [setTimer])
+
+  // Reveal the custom field, prefilling it with the current duration so the
+  // user edits from a sensible starting point.
+  const handleToggleCustom = useCallback(() => {
+    setShowCustom((prev) => {
+      const next = !prev
+      if (next) {
+        const totalSeconds = Math.floor(timer / 1000)
+        setCustomMinutes(String(Math.floor(totalSeconds / 60)))
+        setCustomSeconds(String(totalSeconds % 60))
+        setCustomError(false)
+      }
+      return next
+    })
+  }, [timer])
+
+  const handleCustomFieldChange = useCallback(
+    (setter: (value: string) => void) =>
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        setter(event.target.value)
+        setCustomError(false)
+      },
+    []
+  )
+
+  const handleSetCustomTimer = useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault()
+      const ms = parseCustomDurationMs(customMinutes, customSeconds)
+      if (ms === null) {
+        setCustomError(true)
+        return
+      }
+      handleSetTimer(ms)
+    },
+    [customMinutes, customSeconds, handleSetTimer]
+  )
 
   useEffect(() => {
     let interval: any
@@ -69,15 +137,58 @@ export default function Timer (props: TimerProps) {
       </button>
 
       {showTimeOptions &&
-        <div className='flex gap-3'>
+        <div className='flex items-center gap-3'>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(45000)}>45s</button>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(60000)}>60s</button>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(120000)}>2min</button>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(300000)}>5min</button>
+          <button
+            className={`px-2 rounded ${showCustom ? 'bg-slate-400 text-white' : 'bg-slate-200'}`}
+            onClick={handleToggleCustom}
+            aria-expanded={showCustom}
+          >
+            Custom
+          </button>
+
+          {showCustom &&
+            <form className='flex items-center gap-1' onSubmit={handleSetCustomTimer}>
+              <input
+                type='number'
+                inputMode='numeric'
+                min={0}
+                max={MAX_CUSTOM_MINUTES}
+                step={1}
+                aria-label='Minutes'
+                placeholder='mm'
+                value={customMinutes}
+                onChange={handleCustomFieldChange(setCustomMinutes)}
+                className={`w-12 text-center rounded border bg-white px-1 py-0.5 outline-none ${customError ? 'border-red-400' : 'border-slate-300'}`}
+              />
+              <span className='text-slate-400'>:</span>
+              <input
+                type='number'
+                inputMode='numeric'
+                min={0}
+                max={59}
+                step={1}
+                aria-label='Seconds'
+                placeholder='ss'
+                value={customSeconds}
+                onChange={handleCustomFieldChange(setCustomSeconds)}
+                className={`w-12 text-center rounded border bg-white px-1 py-0.5 outline-none ${customError ? 'border-red-400' : 'border-slate-300'}`}
+              />
+              <button
+                type='submit'
+                className='bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-0.5 rounded'
+              >
+                Set
+              </button>
+            </form>
+          }
         </div>
       }
       
-      <p className={status === 'started' ? 'text-slate-600' : 'text-slate-400'}>{displayTimer.minutes}:{displayTimer.seconds}</p>
+      <p className={status === 'started' ? 'text-slate-600' : 'text-slate-400'}>{displayTimer.hours !== '00' && `${displayTimer.hours}:`}{displayTimer.minutes}:{displayTimer.seconds}</p>
       
       {status === 'started' ?
         <button onClick={resetTimer}>

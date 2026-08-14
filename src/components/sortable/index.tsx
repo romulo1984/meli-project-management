@@ -1,6 +1,8 @@
 import { useSortable } from '@dnd-kit/sortable'
 
-export function Sortable(props: React.PropsWithChildren<{ id: string }>) {
+export function Sortable(
+  props: React.PropsWithChildren<{ id: string; disabled?: boolean }>,
+) {
   const {
     attributes,
     listeners,
@@ -9,6 +11,7 @@ export function Sortable(props: React.PropsWithChildren<{ id: string }>) {
     transition,
   } = useSortable({
     id: props.id,
+    disabled: props.disabled,
   })
 
   const style = transform ? {
@@ -18,7 +21,14 @@ export function Sortable(props: React.PropsWithChildren<{ id: string }>) {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} className='flex gap-1'>
-      <div {...listeners} className='w-[12px] bg-zinc-50 rounded-lg mb-4 shadow cursor-move'></div>
+      <div
+        {...listeners}
+        className={`w-[12px] rounded-lg mb-4 shadow ${
+          props.disabled
+            ? 'bg-zinc-100 cursor-default'
+            : 'bg-zinc-50 cursor-move'
+        }`}
+      ></div>
       {props.children}
     </div>
   )

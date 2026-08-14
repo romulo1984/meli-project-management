@@ -74,7 +74,7 @@ function AnonymousNav() {
               alt={name}
               width={32}
               height={32}
-              className="h-8 w-8 rounded-full"
+              className="h-8 w-8 rounded-full object-cover object-center"
             />
             <span className="text-sm text-slate-600 max-w-[10rem] truncate">
               {name}

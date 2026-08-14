@@ -52,7 +52,7 @@ export default function NoteForm(props: NoteFormProps) {
       <img
         width={24}
         height={24}
-        className="w-6 h-6 me-2 rounded-full"
+        className="w-6 h-6 me-2 rounded-full object-cover object-center"
         src={suggestion.avatar}
         alt={suggestion.display}
       />

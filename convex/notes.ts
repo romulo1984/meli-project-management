@@ -222,19 +222,45 @@ export const mergeMultiple = mutation({
     parentId: v.id('notes'),
   },
   handler: async (ctx, args) => {
-    const parent = await ctx.db.get(args.parentId)
-    if (!parent) {
+    // `parentId` is the first-selected card. Resolve the real group parent so
+    // nesting stays SINGLE-LEVEL: if that card already belongs to a group (has
+    // a mergeParentId) we merge everything into ITS parent instead. A
+    // stand-alone card or an existing group parent becomes the parent itself.
+    const firstSelected = await ctx.db.get(args.parentId)
+    if (!firstSelected) {
       return false
     }
 
-    for (let sourceId of args.sourceIds) {
+    const parentId = firstSelected.mergeParentId ?? firstSelected._id
+
+    for (const sourceId of args.sourceIds) {
+      // Never make a note its own parent (e.g. a group parent selected
+      // alongside one of its own children).
+      if (sourceId === parentId) {
+        continue
+      }
+
       const source = await ctx.db.get(sourceId)
       if (!source) {
         continue
       }
 
+      // If this card was itself a group parent, flatten its group by moving
+      // every child onto the target parent before re-parenting the card — this
+      // keeps the tree single-level (no grandchildren).
+      const childrenNotes = await ctx.db
+        .query('notes')
+        .filter(q => q.eq(q.field('mergeParentId'), source._id))
+        .collect()
+
+      for (const childNote of childrenNotes) {
+        await ctx.db.patch(childNote._id, {
+          mergeParentId: parentId,
+        })
+      }
+
       await ctx.db.patch(source._id, {
-        mergeParentId: parent._id,
+        mergeParentId: parentId,
       })
     }
   },

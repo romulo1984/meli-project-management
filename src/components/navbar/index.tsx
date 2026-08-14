@@ -52,11 +52,14 @@ function AnonymousNav() {
   const { ready, hasName, name, avatar, openRename, promptName } = useIdentity()
 
   return (
-    <div className="flex justify-end items-center gap-6">
-      <Link className={linkClass} href="/new">
-        New
+    <div className="flex justify-end items-center gap-4 sm:gap-5">
+      <Link
+        href="/new"
+        className="rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
+      >
+        + New
       </Link>
-      <Link className={linkClass} href="/retros">
+      <Link className={`text-sm ${linkClass}`} href="/retros">
         My Retros
       </Link>
       <ChangelogBell />
@@ -131,9 +134,11 @@ function ClerkNav() {
 
 export default function Navbar() {
   return (
-    <nav className="container mx-auto max-w-screen-xl py-6 px-6 flex justify-between items-center">
-      <Brand />
-      {CLERK_AUTH_ENABLED ? <ClerkNav /> : <AnonymousNav />}
-    </nav>
+    <header className="sticky top-0 z-30 border-b border-zinc-100 bg-white/80 backdrop-blur-md">
+      <nav className="container mx-auto max-w-screen-xl py-4 px-6 flex justify-between items-center">
+        <Brand />
+        {CLERK_AUTH_ENABLED ? <ClerkNav /> : <AnonymousNav />}
+      </nav>
+    </header>
   )
 }

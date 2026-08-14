@@ -363,19 +363,29 @@ export default function NoteCard(props: NoteProps) {
 
         {!obfuscate && (
           <div className="flex justify-end items-center gap-2">
-            {/* You cannot like your own card — hide the control on self-notes
-                (also refused server-side). */}
-            {!isSelfNote && (
-              <div
-                onClick={likeHandler}
-                className="flex items-center justify-center gap-1"
-              >
-                <LikeIcon liked={youLiked} />
-                {note.likes && note.likes.length > 0 && (
-                  <p className="text-xs text-zinc-400">{note.likes.length}</p>
-                )}
-              </div>
-            )}
+            {/* Likes stay visible on every card — including your own — so the
+                author can see their score. Only the *action* is locked on a
+                self-note (also refused server-side): no click, muted, and a
+                not-allowed cursor to make it clear. */}
+            <div
+              onClick={isSelfNote ? undefined : likeHandler}
+              title={
+                isSelfNote
+                  ? "You can't vote on your own card"
+                  : youLiked
+                    ? 'Remove your vote'
+                    : 'Vote for this card'
+              }
+              className={cn(
+                'flex items-center justify-center gap-1',
+                isSelfNote ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+              )}
+            >
+              <LikeIcon liked={youLiked} />
+              {note.likes && note.likes.length > 0 && (
+                <p className="text-xs text-zinc-400">{note.likes.length}</p>
+              )}
+            </div>
             <FontAwesomeIcon
               onClick={showContextMenu}
               className="px-2"

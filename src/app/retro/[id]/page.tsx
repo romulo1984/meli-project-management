@@ -1,5 +1,4 @@
 'use client'
-import Dropdown, { DropdownItem } from '@/components/dropdown'
 import EditColumnsModal from '@/components/edit-columns-modal'
 import InlineEditName from '@/components/inline-edit-name'
 import Loading from '@/components/loading'
@@ -16,8 +15,9 @@ import useSettings from '@/helpers/hooks/useSettings'
 import { useIdentity } from '@/contexts/IdentityProvider'
 import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
+import SettingsMenu, { SettingsMenuItem } from '@/components/settings-menu'
 import { Button } from '@/components/ui/button'
-import { Pencil, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import {
   DndContext,
   DragCancelEvent,
@@ -271,17 +271,28 @@ export default function Retro(props: RetroProps) {
     }, 600)
   }
 
-  const settingsDropdownItems = (): DropdownItem[] => {
-    const items: DropdownItem[] = []
-
-    items.push({
+  // Rows for the gear settings menu. "Hide notes" is a toggle; "Edit columns"
+  // is an owner-only action that opens the label editor. Add a new setting by
+  // appending one object here — SettingsMenu renders toggles and actions alike.
+  const settingsMenuItems: SettingsMenuItem[] = [
+    {
+      key: settings.notesShowingStatus.key,
       label: settings.notesShowingStatus.label,
-      name: settings.notesShowingStatus.key,
-      selected: settings.notesShowingStatus.value === 'hidden',
+      description: 'Blur every note until you reveal them',
+      active: settings.notesShowingStatus.value === 'hidden',
       disabled: !hasName,
-    })
+      onToggle: () =>
+        handleSettingChange(settings.notesShowingStatus.key, settings),
+    },
+  ]
 
-    return items
+  if (canEditLabels) {
+    settingsMenuItems.push({
+      key: 'edit_columns',
+      label: 'Edit columns…',
+      description: 'Rename the Good / Bad / Actions columns',
+      onSelect: () => setEditColumnsOpen(true),
+    })
   }
 
   // const showGenerateActionItemsButton =
@@ -317,15 +328,7 @@ export default function Retro(props: RetroProps) {
                 </p>
               </div>
               <div className="flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center">
-                <Dropdown
-                  color="zinc-400"
-                  background="slate-50"
-                  items={settingsDropdownItems()}
-                  onItemPressed={(name: string) => {
-                    if (!hasName) return
-                    handleSettingChange(name, settings)
-                  }}
-                />
+                <SettingsMenu items={settingsMenuItems} />
                 <Timer
                   timer={retro?.timer || 0}
                   start={retro?.startTimer || 0}
@@ -338,19 +341,6 @@ export default function Retro(props: RetroProps) {
               </div>
             </div>
             {!hasName && <NotLoggedAlert onAction={promptName} />}
-            {canEditLabels && (
-              <div className="flex justify-end mb-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-zinc-500"
-                  onClick={() => setEditColumnsOpen(true)}
-                >
-                  <Pencil className="mr-2 h-4 w-4" strokeWidth={1.5} />
-                  Edit columns
-                </Button>
-              </div>
-            )}
             <div className="grid md:grid-cols-3 gap-6">
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">

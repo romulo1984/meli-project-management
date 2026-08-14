@@ -1,6 +1,6 @@
 'use client'
 import Dropdown, { DropdownItem } from '@/components/dropdown'
-import InlineEditColumnLabel from '@/components/inline-edit-column-label'
+import EditColumnsModal from '@/components/edit-columns-modal'
 import InlineEditName from '@/components/inline-edit-name'
 import Loading from '@/components/loading'
 import NotLoggedAlert from '@/components/not-logged-alert'
@@ -17,7 +17,7 @@ import { useIdentity } from '@/contexts/IdentityProvider'
 import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
 import { Button } from '@/components/ui/button'
-import { Sparkles } from 'lucide-react'
+import { Pencil, Sparkles } from 'lucide-react'
 import {
   DndContext,
   DragCancelEvent,
@@ -76,6 +76,7 @@ export default function Retro(props: RetroProps) {
     good: false,
     action: false,
   })
+  const [isEditColumnsOpen, setEditColumnsOpen] = useState(false)
   const {
     isLoading,
     retro,
@@ -337,16 +338,23 @@ export default function Retro(props: RetroProps) {
               </div>
             </div>
             {!hasName && <NotLoggedAlert onAction={promptName} />}
+            {canEditLabels && (
+              <div className="flex justify-end mb-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-zinc-500"
+                  onClick={() => setEditColumnsOpen(true)}
+                >
+                  <Pencil className="mr-2 h-4 w-4" strokeWidth={1.5} />
+                  Edit columns
+                </Button>
+              </div>
+            )}
             <div className="grid md:grid-cols-3 gap-6">
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <InlineEditColumnLabel
-                    className="mb-4"
-                    retroId={retro?._id}
-                    column="good"
-                    value={goodLabel}
-                    disabled={!canEditLabels}
-                  />
+                  <p className="text-lg text-zinc-500 mb-4">{goodLabel}</p>
                   <p className="text-zinc-400">{parsedNotes.good?.length}</p>
                 </div>
                 {hasName && (
@@ -385,13 +393,7 @@ export default function Retro(props: RetroProps) {
               </div>
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <InlineEditColumnLabel
-                    className="mb-4"
-                    retroId={retro?._id}
-                    column="bad"
-                    value={badLabel}
-                    disabled={!canEditLabels}
-                  />
+                  <p className="text-lg text-zinc-500 mb-4">{badLabel}</p>
                   <p className="text-zinc-400">{parsedNotes.bad?.length}</p>
                 </div>
                 {hasName && (
@@ -431,12 +433,7 @@ export default function Retro(props: RetroProps) {
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
                   <div className="text-lg text-zinc-500 mb-4 flex items-center gap-2 w-full">
-                    <InlineEditColumnLabel
-                      retroId={retro?._id}
-                      column="action"
-                      value={actionLabel}
-                      disabled={!canEditLabels}
-                    />
+                    <span>{actionLabel}</span>
                     {isGenerating && (
                       <Sparkles
                         className="mr-2 h-4 w-4 text-violet-800 generating-action-items-intermittent"
@@ -514,6 +511,16 @@ export default function Retro(props: RetroProps) {
                 )}
               </div>
             </div>
+            {canEditLabels && (
+              <EditColumnsModal
+                retroId={retro?._id}
+                open={isEditColumnsOpen}
+                onOpenChange={setEditColumnsOpen}
+                goodLabel={goodLabel}
+                badLabel={badLabel}
+                actionLabel={actionLabel}
+              />
+            )}
           </>
         )}
       </main>

@@ -19,6 +19,7 @@ import {
   AVATAR_ACCEPT_ATTR,
   processAvatarFile,
 } from '@/helpers/avatarImage'
+import { Upload } from 'lucide-react'
 
 export default function NameModal() {
   const {
@@ -132,75 +133,81 @@ export default function NameModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 pt-2">
+          {/* Hidden native picker, triggered by the styled "Upload photo" button. */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={AVATAR_ACCEPT_ATTR}
+            onChange={handleFileChange}
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+
+          {/* Avatar preview + its controls, grouped so the upload sits right
+              next to what it changes. */}
           <div className="flex items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewAvatar}
               alt="Your avatar"
-              width={56}
-              height={56}
-              className="h-14 w-14 rounded-full shadow-sm shrink-0"
+              width={64}
+              height={64}
+              className="h-16 w-16 shrink-0 rounded-full object-cover object-center shadow-sm ring-1 ring-zinc-100"
             />
-            <div className="flex flex-col w-full">
-              <label
-                htmlFor="display-name-input"
-                className="text-xs font-medium text-zinc-400 mb-1"
-              >
-                Display name
-              </label>
-              <input
-                id="display-name-input"
-                ref={inputRef}
-                value={value}
-                maxLength={MAX_NAME_LENGTH}
-                onChange={e => setValue(e.target.value)}
-                placeholder="e.g. Alex from Payments"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-zinc-700 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-              />
-              <span className="mt-1 text-xs text-zinc-400">
-                {normalizeName(value).length}/{MAX_NAME_LENGTH}
-              </span>
+            <div className="flex min-w-0 flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={processing || saving}
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Upload className="h-4 w-4" aria-hidden="true" />
+                  {processing ? 'Processing…' : 'Upload photo'}
+                </button>
+                {Boolean(effectiveCustomAvatar) && (
+                  <button
+                    type="button"
+                    onClick={handleUseLetter}
+                    disabled={processing || saving}
+                    className="text-sm text-zinc-500 underline-offset-2 transition-colors hover:text-zinc-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Use letter avatar
+                  </button>
+                )}
+              </div>
+              {avatarError ? (
+                <p className="text-xs text-red-500">{avatarError}</p>
+              ) : (
+                <p className="text-xs text-zinc-400">
+                  PNG, JPEG, WebP or GIF, up to 5&nbsp;MB. Stays on this device.
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          {/* Display name */}
+          <div className="flex flex-col">
+            <label
+              htmlFor="display-name-input"
+              className="mb-1 text-xs font-medium text-zinc-400"
+            >
+              Display name
+            </label>
             <input
-              ref={fileInputRef}
-              type="file"
-              accept={AVATAR_ACCEPT_ATTR}
-              onChange={handleFileChange}
-              className="hidden"
-              aria-hidden="true"
-              tabIndex={-1}
+              id="display-name-input"
+              ref={inputRef}
+              value={value}
+              maxLength={MAX_NAME_LENGTH}
+              onChange={e => setValue(e.target.value)}
+              placeholder="e.g. Alex from Payments"
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-zinc-700 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
             />
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={processing || saving}
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {processing ? 'Processing…' : 'Upload photo'}
-              </button>
-              {Boolean(effectiveCustomAvatar) && (
-                <button
-                  type="button"
-                  onClick={handleUseLetter}
-                  disabled={processing || saving}
-                  className="text-sm text-zinc-500 underline-offset-2 transition-colors hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Use letter avatar
-                </button>
-              )}
-            </div>
-            {avatarError ? (
-              <p className="text-xs text-red-500">{avatarError}</p>
-            ) : (
-              <p className="text-xs text-zinc-400">
-                PNG, JPEG, WebP or GIF, up to 5&nbsp;MB. Stays on this device.
-              </p>
-            )}
+            <span className="mt-1 text-xs text-zinc-400">
+              {normalizeName(value).length}/{MAX_NAME_LENGTH}
+            </span>
           </div>
 
           <button

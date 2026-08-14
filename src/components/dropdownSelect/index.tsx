@@ -76,7 +76,7 @@ export default function DropdownSelect(props: DropdownSelectProps) {
               <img
                 width={14}
                 height={14}
-                className="w-5 h-5 me-2 rounded-full"
+                className="w-5 h-5 me-2 rounded-full object-cover object-center"
                 src={selected.avatar}
                 alt={selected.name}
               />
@@ -121,7 +121,7 @@ export default function DropdownSelect(props: DropdownSelectProps) {
                 <img
                   width={14}
                   height={14}
-                  className="w-6 h-6 me-2 rounded-full"
+                  className="w-6 h-6 me-2 rounded-full object-cover object-center"
                   src={user.avatar}
                   alt={user.name}
                 />

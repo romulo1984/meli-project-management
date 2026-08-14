@@ -148,7 +148,7 @@ export default function NoteCard(props: NoteProps) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           alt={user?.name || ''}
-          className="w-5 h-5 rounded-full inline-block mr-2"
+          className="w-5 h-5 rounded-full object-cover object-center inline-block mr-2"
           src={user?.avatar || ''}
           width={24}
           height={24}

@@ -19,7 +19,7 @@
 
 import { MAX_AVATAR_DATA_URI_LENGTH } from './localIdentity'
 
-/** Longest side of the stored avatar, in pixels (aspect ratio is preserved). */
+/** Side length of the (square) stored avatar, in pixels. */
 export const AVATAR_MAX_DIMENSION = 128
 
 /** Maximum accepted input file size (5 MB). */
@@ -92,15 +92,18 @@ export const processAvatarFile = async (
     return fail("That image couldn't be read. Please try another file.")
   }
 
-  // 3. Resize to fit within AVATAR_MAX_DIMENSION, preserving aspect ratio and
-  //    never upscaling.
-  const scale = Math.min(1, AVATAR_MAX_DIMENSION / Math.max(width, height))
-  const targetWidth = Math.max(1, Math.round(width * scale))
-  const targetHeight = Math.max(1, Math.round(height * scale))
+  // 3. Center-crop to a square (COVER) so a non-square image is never
+  //    stretched, then scale into a square canvas without upscaling. We take
+  //    the largest centered square of the source and render it into an
+  //    `outputSize`×`outputSize` canvas (capped at AVATAR_MAX_DIMENSION).
+  const cropSide = Math.min(width, height)
+  const cropX = Math.floor((width - cropSide) / 2)
+  const cropY = Math.floor((height - cropSide) / 2)
+  const outputSize = Math.max(1, Math.min(AVATAR_MAX_DIMENSION, cropSide))
 
   const canvas = document.createElement('canvas')
-  canvas.width = targetWidth
-  canvas.height = targetHeight
+  canvas.width = outputSize
+  canvas.height = outputSize
   const ctx = canvas.getContext('2d')
   if (!ctx) {
     return fail("Image processing isn't supported in this browser.")
@@ -110,7 +113,20 @@ export const processAvatarFile = async (
 
   // 4. Re-encode through the canvas — this is the security-critical step: only
   //    raster pixels survive, so EXIF and any script/markup payload are gone.
-  ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
+  //    The 9-argument drawImage maps the centered square crop of the source
+  //    onto the full square canvas (cover), so the aspect ratio is preserved
+  //    and the image is cropped, not distorted.
+  ctx.drawImage(
+    img,
+    cropX,
+    cropY,
+    cropSide,
+    cropSide,
+    0,
+    0,
+    outputSize,
+    outputSize,
+  )
 
   let dataUri = canvas.toDataURL('image/png')
   if (dataUri.length > MAX_AVATAR_DATA_URI_LENGTH) {

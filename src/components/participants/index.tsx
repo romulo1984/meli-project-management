@@ -25,7 +25,7 @@ export default function Participants(props: ParticipantsProps) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            className="rounded-full max-h-full h-full"
+            className="h-full w-full rounded-full object-cover object-center"
             alt={user?.name || ''}
             title={user?.name || ''}
             src={user?.avatar || ''}

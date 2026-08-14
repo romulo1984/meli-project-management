@@ -36,6 +36,11 @@ export default defineSchema({
     timerStatus: v.optional(v.string()),
     notesShowingStatus: v.optional(v.string()),
     status: v.optional(v.string()),
+    // Optional custom display labels for the three columns. When unset/empty the
+    // client falls back to the hardcoded defaults ("Good"/"Bad"/"Actions").
+    goodLabel: v.optional(v.string()),
+    badLabel: v.optional(v.string()),
+    actionLabel: v.optional(v.string()),
     // Optional, unused by the current app (feature/encrypted-notes compat) — see notes table.
     encryptionEnabled: v.optional(v.boolean()),
     keyVersion: v.optional(v.number()),

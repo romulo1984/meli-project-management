@@ -1,5 +1,4 @@
 'use client'
-import Dropdown, { DropdownItem } from '@/components/dropdown'
 import InlineEditName from '@/components/inline-edit-name'
 import Loading from '@/components/loading'
 import NotLoggedAlert from '@/components/not-logged-alert'
@@ -8,7 +7,7 @@ import NoteForm from '@/components/note-form'
 import Participants from '@/components/participants'
 import { Sortable } from '@/components/sortable'
 import Timer from '@/components/timer'
-import HighlightToggle from '@/components/highlight-toggle'
+import SettingsMenu, { SettingsMenuItem } from '@/components/settings-menu'
 import { useJoinRetro } from '@/helpers/hooks/useJoinRetro'
 import useHighlightMode from '@/helpers/hooks/useHighlightMode'
 import useRetro from '@/helpers/hooks/useRetro'
@@ -283,18 +282,28 @@ export default function Retro(props: RetroProps) {
     }, 600)
   }
 
-  const settingsDropdownItems = (): DropdownItem[] => {
-    const items: DropdownItem[] = []
-
-    items.push({
+  const settingsMenuItems: SettingsMenuItem[] = [
+    {
+      key: settings.notesShowingStatus.key,
       label: settings.notesShowingStatus.label,
-      name: settings.notesShowingStatus.key,
-      selected: settings.notesShowingStatus.value === 'hidden',
+      active: settings.notesShowingStatus.value === 'hidden',
       disabled: !hasName,
-    })
-
-    return items
-  }
+      onToggle: () => {
+        if (!hasName) return
+        handleSettingChange(settings.notesShowingStatus.key, settings)
+      },
+    },
+    {
+      key: 'highlight_mode',
+      label: 'Highlight mode',
+      description: isControlledByOther
+        ? 'In use by another participant'
+        : undefined,
+      active: isController,
+      disabled: !hasName || !me || isControlledByOther,
+      onToggle: toggle,
+    },
+  ]
 
   // const showGenerateActionItemsButton =
   //   parsedNotes.bad.length > 0 &&
@@ -329,21 +338,7 @@ export default function Retro(props: RetroProps) {
                 </p>
               </div>
               <div className="flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center">
-                <Dropdown
-                  color="zinc-400"
-                  background="slate-50"
-                  items={settingsDropdownItems()}
-                  onItemPressed={(name: string) => {
-                    if (!hasName) return
-                    handleSettingChange(name, settings)
-                  }}
-                />
-                <HighlightToggle
-                  active={isController}
-                  controlledByOther={isControlledByOther}
-                  disabled={!hasName || !me}
-                  onToggle={toggle}
-                />
+                <SettingsMenu items={settingsMenuItems} />
                 <Timer
                   timer={retro?.timer || 0}
                   start={retro?.startTimer || 0}

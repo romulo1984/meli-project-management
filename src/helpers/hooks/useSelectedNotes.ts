@@ -16,9 +16,11 @@ export default function useSelectedNotes() {
   }, [])
 
   // Toggle a note in/out of the current selection. Selection order is
-  // preserved, so the first picked note is the merge parent. Merges are
-  // scoped to a single column, so picking a note from another pipeline
-  // restarts the selection in that pipeline.
+  // preserved: the first picked card is the merge target. If it is (or belongs
+  // to) an existing group, the rest are added to that group; otherwise it
+  // becomes the new group's parent. The real parent is resolved server-side
+  // (see convex/notes.ts mergeMultiple). Merges are scoped to a single column,
+  // so picking a note from another pipeline restarts the selection there.
   const toggleNote = useCallback(
     (note: Doc<'notes'>) => {
       setSelectedNotes(prev => {
@@ -51,14 +53,16 @@ export default function useSelectedNotes() {
     setSelectedPipeline(null)
   }, [])
 
-  // Merge every selected note into the first one picked (the parent).
+  // Merge every other selected note into the first one picked (the target).
+  // The server resolves the real group parent from that target, so an existing
+  // group is joined rather than nested (see convex/notes.ts mergeMultiple).
   const mergeSelectedNotes = useCallback(() => {
     if (selectedNotes.length < 2) return
 
-    const [parent, ...sources] = selectedNotes
+    const [target, ...sources] = selectedNotes
 
     MergeNotes({
-      parentId: parent._id,
+      parentId: target._id,
       sourceIds: sources.map(n => n._id),
     })
 

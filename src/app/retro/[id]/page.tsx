@@ -1,5 +1,4 @@
 'use client'
-import Dropdown, { DropdownItem } from '@/components/dropdown'
 import InlineEditName from '@/components/inline-edit-name'
 import Loading from '@/components/loading'
 import NotLoggedAlert from '@/components/not-logged-alert'
@@ -16,8 +15,9 @@ import { useIdentity } from '@/contexts/IdentityProvider'
 import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
 import { Button } from '@/components/ui/button'
-import { Layers, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import MergeModeBar from '@/components/merge-mode-bar'
+import SettingsMenu, { SettingsMenuItem } from '@/components/settings-menu'
 import {
   DndContext,
   DragEndEvent,
@@ -211,18 +211,26 @@ export default function Retro(props: RetroProps) {
     }
   }
 
-  const settingsDropdownItems = (): DropdownItem[] => {
-    const items: DropdownItem[] = []
-
-    items.push({
+  // Rows for the gear settings menu. Add a new setting by appending one object
+  // here — SettingsMenu renders each as a labelled on/off toggle.
+  const settingsMenuItems: SettingsMenuItem[] = [
+    {
+      key: settings.notesShowingStatus.key,
       label: settings.notesShowingStatus.label,
-      name: settings.notesShowingStatus.key,
-      selected: settings.notesShowingStatus.value === 'hidden',
+      description: 'Blur every note until you reveal them',
+      active: settings.notesShowingStatus.value === 'hidden',
       disabled: !hasName,
-    })
-
-    return items
-  }
+      onToggle: () =>
+        handleSettingChange(settings.notesShowingStatus.key, settings),
+    },
+    {
+      key: 'merge_mode',
+      label: 'Merge mode',
+      description: 'Select cards to group them together',
+      active: mergeMode,
+      onToggle: mergeMode ? exitMergeMode : enterMergeMode,
+    },
+  ]
 
   // const showGenerateActionItemsButton =
   //   parsedNotes.bad.length > 0 &&
@@ -252,24 +260,7 @@ export default function Retro(props: RetroProps) {
                 </p>
               </div>
               <div className="flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center">
-                <Button
-                  variant={mergeMode ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={mergeMode ? exitMergeMode : enterMergeMode}
-                  title="Merge cards together"
-                >
-                  <Layers className="mr-2 h-4 w-4" strokeWidth={1.5} />
-                  {mergeMode ? 'Exit merge' : 'Merge'}
-                </Button>
-                <Dropdown
-                  color="zinc-400"
-                  background="slate-50"
-                  items={settingsDropdownItems()}
-                  onItemPressed={(name: string) => {
-                    if (!hasName) return
-                    handleSettingChange(name, settings)
-                  }}
-                />
+                <SettingsMenu items={settingsMenuItems} />
                 <Timer
                   timer={retro?.timer || 0}
                   start={retro?.startTimer || 0}

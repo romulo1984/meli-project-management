@@ -12,6 +12,7 @@ import NoteBody from '../note-body'
 import NoteForm from '../note-form'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons'
+import { Unlink } from 'lucide-react'
 import { ContextMenu } from 'primereact/contextmenu'
 import { MenuItem } from 'primereact/menuitem'
 import { ConfirmPopup } from 'primereact/confirmpopup'
@@ -83,6 +84,10 @@ export default function NoteCard(props: NoteProps) {
   const UnmergeAll = useMutation(api.notes.unmergeAll)
 
   const isOwner = me?._id === user?._id
+
+  // A merged child card gets its own quick "detach" control (see below), the
+  // discoverable per-card counterpart of the context-menu "Unmerge".
+  const isChild = note.mergeParentId !== undefined
 
   const isAnonymous = note.anonymous !== undefined && note.anonymous === true
   const obfuscate = blur && !isOwner
@@ -254,7 +259,7 @@ export default function NoteCard(props: NoteProps) {
     <div
       ref={cardRef}
       title={note.body}
-      className={`relative transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle} ${
+      className={`group relative transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle} ${
         selected ? 'selected' : ''
       } ${
         selectionActive
@@ -265,6 +270,20 @@ export default function NoteCard(props: NoteProps) {
       onDoubleClick={selectionActive ? undefined : toggleEdition}
       onContextMenu={selectionActive ? undefined : showContextMenu}
     >
+      {isChild && !mergeMode && (
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation()
+            Unmerge({ id: note._id })
+          }}
+          title="Detach from group"
+          aria-label="Detach from group"
+          className="absolute right-1.5 top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md bg-white/70 text-zinc-400 opacity-0 shadow-sm backdrop-blur-sm transition-all hover:bg-zinc-100 hover:text-indigo-600 focus:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          <Unlink className="h-3.5 w-3.5" strokeWidth={1.5} />
+        </button>
+      )}
       {mergeMode && selected && (
         <div
           className={`absolute -top-2 -right-2 z-10 flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-semibold text-white shadow ${

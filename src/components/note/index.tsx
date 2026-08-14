@@ -42,14 +42,12 @@ export default function Note(props: NoteProps) {
   })
 
   const hasChildren = childrenNotes && childrenNotes.length > 0
-  const isMerged = note.mergeParentId !== undefined
 
-  // In merge mode a card can be picked only if it is a stand-alone note in the
-  // column currently being merged (a merge is scoped to a single pipeline).
+  // In merge mode any top-level card in the column currently being merged can
+  // be picked — including an existing group parent, whose whole group is then
+  // merged into the target. Merges stay scoped to a single pipeline.
   const selectable =
     mergeMode &&
-    !hasChildren &&
-    !isMerged &&
     (selectedPipeline === null || selectedPipeline === note.pipeline)
 
   const selectionIndex = selectedNotes.findIndex(n => n._id === note._id)
@@ -95,6 +93,7 @@ export default function Note(props: NoteProps) {
             blur={blur}
             roundTop={false}
             roundBottom={i === childrenNotes.length - 1}
+            mergeMode={mergeMode}
             generateActionItems={generateActionItems}
             isGenerating={isGenerating}
           />

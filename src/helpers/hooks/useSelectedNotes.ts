@@ -6,50 +6,78 @@ import { useMutation } from 'convex/react'
 
 export default function useSelectedNotes() {
   const MergeNotes = useMutation(api.notes.mergeMultiple)
-  const [selectedPipeline, setselectedPipeline] = useState<string | null>(null)
+  const [mergeMode, setMergeMode] = useState(false)
+  const [selectedPipeline, setSelectedPipeline] = useState<string | null>(null)
   const [selectedNotes, setSelectedNotes] = useState<Doc<'notes'>[]>([])
 
+  const clearSelection = useCallback(() => {
+    setSelectedNotes([])
+    setSelectedPipeline(null)
+  }, [])
+
+  // Toggle a note in/out of the current selection. Selection order is
+  // preserved: the first picked card is the merge target. If it is (or belongs
+  // to) an existing group, the rest are added to that group; otherwise it
+  // becomes the new group's parent. The real parent is resolved server-side
+  // (see convex/notes.ts mergeMultiple). Merges are scoped to a single column,
+  // so picking a note from another pipeline restarts the selection there.
   const toggleNote = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>, note: Doc<'notes'>) => {
-      if (event.ctrlKey || event.metaKey) {
-        setSelectedNotes(prev => {
-          if (prev.includes(note)) return prev.filter(n => n !== note)
+    (note: Doc<'notes'>) => {
+      setSelectedNotes(prev => {
+        const alreadySelected = prev.some(n => n._id === note._id)
 
-          if (note.pipeline !== selectedPipeline) {
-            setselectedPipeline(note.pipeline)
-            return [note]
-          }
+        if (alreadySelected) {
+          const next = prev.filter(n => n._id !== note._id)
+          if (next.length === 0) setSelectedPipeline(null)
+          return next
+        }
 
-          setselectedPipeline(note.pipeline)
-          return [...prev, note]
-        })
-      }
+        if (note.pipeline !== selectedPipeline) {
+          setSelectedPipeline(note.pipeline)
+          return [note]
+        }
+
+        return [...prev, note]
+      })
     },
     [selectedPipeline],
   )
 
-  const mergeSelectedNotes = useCallback(
-    (parent: Doc<'notes'>) => {
-      if (selectedNotes.length > 1) {
-        const parentId = parent._id
-        const sourceIds = selectedNotes
-          .filter(n => n._id !== parentId)
-          .map(n => n._id)
+  const enterMergeMode = useCallback(() => {
+    setMergeMode(true)
+  }, [])
 
-        MergeNotes({
-          sourceIds,
-          parentId,
-        })
-        setSelectedNotes([])
-      }
-    },
-    [MergeNotes, selectedNotes],
-  )
+  const exitMergeMode = useCallback(() => {
+    setMergeMode(false)
+    setSelectedNotes([])
+    setSelectedPipeline(null)
+  }, [])
+
+  // Merge every other selected note into the first one picked (the target).
+  // The server resolves the real group parent from that target, so an existing
+  // group is joined rather than nested (see convex/notes.ts mergeMultiple).
+  const mergeSelectedNotes = useCallback(() => {
+    if (selectedNotes.length < 2) return
+
+    const [target, ...sources] = selectedNotes
+
+    MergeNotes({
+      parentId: target._id,
+      sourceIds: sources.map(n => n._id),
+    })
+
+    setSelectedNotes([])
+    setSelectedPipeline(null)
+  }, [MergeNotes, selectedNotes])
 
   return {
+    mergeMode,
+    enterMergeMode,
+    exitMergeMode,
     selectedNotes,
+    selectedPipeline,
     toggleNote,
     mergeSelectedNotes,
-    selectedPipeline,
+    clearSelection,
   }
 }

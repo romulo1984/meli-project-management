@@ -1,5 +1,4 @@
 'use client'
-import Dropdown, { DropdownItem } from '@/components/dropdown'
 import InlineEditName from '@/components/inline-edit-name'
 import Loading from '@/components/loading'
 import NotLoggedAlert from '@/components/not-logged-alert'
@@ -17,12 +16,11 @@ import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
 import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
+import MergeModeBar from '@/components/merge-mode-bar'
+import SettingsMenu, { SettingsMenuItem } from '@/components/settings-menu'
 import {
   DndContext,
-  DragCancelEvent,
   DragEndEvent,
-  DragOverEvent,
-  Over,
   UniqueIdentifier,
   closestCenter,
 } from '@dnd-kit/core'
@@ -32,9 +30,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useMutation } from 'convex/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { confirmAlert } from 'react-confirm-alert'
-import 'react-confirm-alert/src/react-confirm-alert.css'
+import { useEffect, useMemo, useState } from 'react'
 import { useGenerateActionItems } from '@/helpers/hooks/useGenerateActionItems'
 import { SelectModel } from '@/components/select-model'
 
@@ -88,7 +84,6 @@ export default function Retro(props: RetroProps) {
   } = useRetro({ retroId })
   const CreateNote = useMutation(api.notes.store)
   const UpdatePositions = useMutation(api.notes.updatePositions)
-  const MergeNotes = useMutation(api.notes.merge)
   const { hasName, ready, promptName } = useIdentity()
   useJoinRetro({ retroId })
 
@@ -100,9 +95,15 @@ export default function Retro(props: RetroProps) {
   const { handleSettingChange } = useSettings({
     retroId: retroId,
   })
-  const mergeOverRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [mergeTarget, setMergeTarget] = useState<Over>()
-  const { toggleNote, selectedNotes, mergeSelectedNotes } = useSelectedNotes()
+  const {
+    mergeMode,
+    enterMergeMode,
+    exitMergeMode,
+    selectedNotes,
+    selectedPipeline,
+    toggleNote,
+    mergeSelectedNotes,
+  } = useSelectedNotes()
   const { generateActionItems, isGenerating } = useGenerateActionItems({
     retroId,
     userId: me?._id,
@@ -192,15 +193,10 @@ export default function Retro(props: RetroProps) {
       day: 'numeric',
     })
 
-  const handleDragCancel = (event: DragCancelEvent) => {
-    mergeOverRef.current && clearTimeout(mergeOverRef.current)
-    setMergeTarget(undefined)
-  }
-
+  // Drag & drop now only reorders cards within a column. Merging is handled by
+  // the dedicated merge mode (see MergeModeBar / useSelectedNotes).
   const handleDragEnd = (event: DragEndEvent) => {
     const { over, active } = event
-    mergeOverRef.current && clearTimeout(mergeOverRef.current)
-    setMergeTarget(undefined)
 
     if (over && over?.id !== active?.id) {
       const items = [...active?.data?.current?.sortable?.items]
@@ -215,66 +211,26 @@ export default function Retro(props: RetroProps) {
     }
   }
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over, active } = event
-
-    if (!over || !active) {
-      return
-    }
-
-    if (over.id === active.id) {
-      return
-    }
-
-    const overNote = notes?.find(n => n._id === over.id)!
-    const activeNote = notes?.find(n => n._id === active.id)!
-
-    if (overNote.pipeline !== activeNote.pipeline) {
-      return
-    }
-
-    setTimeout(setMergeTarget, 300, over)
-    mergeOverRef.current && clearTimeout(mergeOverRef.current)
-    mergeOverRef.current = setTimeout(() => {
-      clearTimeout(mergeOverRef.current!)
-
-      confirmAlert({
-        title: 'Merge contents',
-        message:
-          'Do you want to merge the contents of both cards? This action is unreversible',
-        buttons: [
-          {
-            label: 'No',
-            onClick: () => null,
-          },
-          {
-            label: 'Yes, merge',
-            onClick: () => {
-              MergeNotes({
-                sourceId: activeNote._id,
-                parentId: overNote._id,
-              })
-
-              setMergeTarget(undefined)
-            },
-          },
-        ],
-      })
-    }, 600)
-  }
-
-  const settingsDropdownItems = (): DropdownItem[] => {
-    const items: DropdownItem[] = []
-
-    items.push({
+  // Rows for the gear settings menu. Add a new setting by appending one object
+  // here — SettingsMenu renders each as a labelled on/off toggle.
+  const settingsMenuItems: SettingsMenuItem[] = [
+    {
+      key: settings.notesShowingStatus.key,
       label: settings.notesShowingStatus.label,
-      name: settings.notesShowingStatus.key,
-      selected: settings.notesShowingStatus.value === 'hidden',
+      description: 'Blur every note until you reveal them',
+      active: settings.notesShowingStatus.value === 'hidden',
       disabled: !hasName,
-    })
-
-    return items
-  }
+      onToggle: () =>
+        handleSettingChange(settings.notesShowingStatus.key, settings),
+    },
+    {
+      key: 'merge_mode',
+      label: 'Merge mode',
+      description: 'Select cards to group them together',
+      active: mergeMode,
+      onToggle: mergeMode ? exitMergeMode : enterMergeMode,
+    },
+  ]
 
   // const showGenerateActionItemsButton =
   //   parsedNotes.bad.length > 0 &&
@@ -286,12 +242,7 @@ export default function Retro(props: RetroProps) {
   const showGenerateActionItemsButton = false
 
   return (
-    <DndContext
-      onDragEnd={handleDragEnd}
-      onDragOver={handleDragOver}
-      onDragCancel={handleDragCancel}
-      collisionDetection={closestCenter}
-    >
+    <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
       <main className="container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col">
         {isLoading ? (
           <Loading />
@@ -309,15 +260,7 @@ export default function Retro(props: RetroProps) {
                 </p>
               </div>
               <div className="flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center">
-                <Dropdown
-                  color="zinc-400"
-                  background="slate-50"
-                  items={settingsDropdownItems()}
-                  onItemPressed={(name: string) => {
-                    if (!hasName) return
-                    handleSettingChange(name, settings)
-                  }}
-                />
+                <SettingsMenu items={settingsMenuItems} />
                 <Timer
                   timer={retro?.timer || 0}
                   start={retro?.startTimer || 0}
@@ -352,18 +295,18 @@ export default function Retro(props: RetroProps) {
                     strategy={verticalListSortingStrategy}
                   >
                     {parsedNotes.good?.map(note => (
-                      <Sortable key={note._id} id={note._id}>
+                      <Sortable key={note._id} id={note._id} disabled={mergeMode}>
                         <Note
-                          highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}
                           users={users}
                           me={me}
                           blur={settings.notesShowingStatus.value === 'hidden'}
                           childrenNotes={parsedNotes.children[note._id]}
+                          mergeMode={mergeMode}
+                          selectedPipeline={selectedPipeline}
                           selectedNotes={selectedNotes}
                           toggleNote={toggleNote}
-                          mergeSelectedNotes={mergeSelectedNotes}
                         />
                       </Sortable>
                     ))}
@@ -391,18 +334,18 @@ export default function Retro(props: RetroProps) {
                     strategy={verticalListSortingStrategy}
                   >
                     {parsedNotes.bad?.map(note => (
-                      <Sortable key={note._id} id={note._id}>
+                      <Sortable key={note._id} id={note._id} disabled={mergeMode}>
                         <Note
-                          highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}
                           users={users}
                           me={me}
                           blur={settings.notesShowingStatus.value === 'hidden'}
                           childrenNotes={parsedNotes.children[note._id]}
+                          mergeMode={mergeMode}
+                          selectedPipeline={selectedPipeline}
                           selectedNotes={selectedNotes}
                           toggleNote={toggleNote}
-                          mergeSelectedNotes={mergeSelectedNotes}
                         />
                       </Sortable>
                     ))}
@@ -467,12 +410,11 @@ export default function Retro(props: RetroProps) {
                       </div>
                     )}
                     {parsedNotes.action?.map(note => (
-                      <Sortable key={note._id} id={note._id}>
+                      <Sortable key={note._id} id={note._id} disabled={mergeMode}>
                         <Note
                           className={
                             isGenerating ? 'generating-action-items' : ''
                           }
-                          highlighted={mergeTarget?.id === note._id}
                           key={note._id}
                           note={note}
                           users={users}
@@ -480,9 +422,10 @@ export default function Retro(props: RetroProps) {
                           actionType={hasName}
                           blur={settings.notesShowingStatus.value === 'hidden'}
                           childrenNotes={parsedNotes.children[note._id]}
+                          mergeMode={mergeMode}
+                          selectedPipeline={selectedPipeline}
                           selectedNotes={selectedNotes}
                           toggleNote={toggleNote}
-                          mergeSelectedNotes={mergeSelectedNotes}
                         />
                       </Sortable>
                     ))}
@@ -490,6 +433,13 @@ export default function Retro(props: RetroProps) {
                 )}
               </div>
             </div>
+            {mergeMode && (
+              <MergeModeBar
+                count={selectedNotes.length}
+                onMerge={mergeSelectedNotes}
+                onCancel={exitMergeMode}
+              />
+            )}
           </>
         )}
       </main>

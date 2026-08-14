@@ -15,11 +15,16 @@ import {
   normalizeName,
   suggestName,
 } from '@/helpers/localIdentity'
+import {
+  AVATAR_ACCEPT_ATTR,
+  processAvatarFile,
+} from '@/helpers/avatarImage'
 
 export default function NameModal() {
   const {
     anonId,
     name,
+    customAvatar,
     nameModalMode,
     isNameModalOpen,
     saveName,
@@ -28,12 +33,24 @@ export default function NameModal() {
 
   const [value, setValue] = useState('')
   const [saving, setSaving] = useState(false)
+  // Pending avatar change staged in the modal (not yet saved):
+  //   undefined → no change (keep the stored avatar)
+  //   string    → newly uploaded custom avatar
+  //   null       → cleared back to the generated letter avatar
+  const [pendingAvatar, setPendingAvatar] = useState<string | null | undefined>(
+    undefined,
+  )
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const [processing, setProcessing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Seed the field each time the modal opens: current name when editing, a
-  // friendly suggestion on first welcome.
+  // friendly suggestion on first welcome. Also reset any staged avatar change.
   useEffect(() => {
     if (!isNameModalOpen) return
+    setPendingAvatar(undefined)
+    setAvatarError(null)
     if (nameModalMode === 'edit') {
       setValue(name)
     } else {
@@ -47,17 +64,48 @@ export default function NameModal() {
   }, [isNameModalOpen, nameModalMode, name])
 
   const valid = isValidName(value)
-  const previewAvatar = useMemo(
+  const generatedAvatar = useMemo(
     () => generateAvatarDataUri(anonId || 'anon', value || '?'),
     [anonId, value],
   )
+  // Effective custom avatar for the preview: a staged change wins, otherwise
+  // fall back to whatever is currently saved.
+  const effectiveCustomAvatar =
+    pendingAvatar === undefined ? customAvatar : pendingAvatar
+  const previewAvatar = effectiveCustomAvatar || generatedAvatar
+
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0]
+    // Reset the input so selecting the same file again re-triggers onChange.
+    e.target.value = ''
+    if (!file) return
+    setAvatarError(null)
+    setProcessing(true)
+    try {
+      const result = await processAvatarFile(file)
+      if (result.ok) {
+        setPendingAvatar(result.dataUri)
+      } else {
+        setAvatarError(result.error)
+      }
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleUseLetter = () => {
+    setAvatarError(null)
+    setPendingAvatar(null)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!valid || saving) return
     setSaving(true)
     try {
-      await saveName(value)
+      await saveName(value, pendingAvatar)
     } finally {
       setSaving(false)
     }
@@ -114,6 +162,45 @@ export default function NameModal() {
                 {normalizeName(value).length}/{MAX_NAME_LENGTH}
               </span>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={AVATAR_ACCEPT_ATTR}
+              onChange={handleFileChange}
+              className="hidden"
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={processing || saving}
+                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {processing ? 'Processing…' : 'Upload photo'}
+              </button>
+              {Boolean(effectiveCustomAvatar) && (
+                <button
+                  type="button"
+                  onClick={handleUseLetter}
+                  disabled={processing || saving}
+                  className="text-sm text-zinc-500 underline-offset-2 transition-colors hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Use letter avatar
+                </button>
+              )}
+            </div>
+            {avatarError ? (
+              <p className="text-xs text-red-500">{avatarError}</p>
+            ) : (
+              <p className="text-xs text-zinc-400">
+                PNG, JPEG, WebP or GIF, up to 5&nbsp;MB. Stays on this device.
+              </p>
+            )}
           </div>
 
           <button

@@ -17,6 +17,8 @@ import { ContextMenu } from 'primereact/contextmenu'
 import { MenuItem } from 'primereact/menuitem'
 import { ConfirmPopup } from 'primereact/confirmpopup'
 import { useGenerateActionItems } from '@/helpers/hooks/useGenerateActionItems'
+import { toast } from 'react-toastify'
+import { cn } from '@/lib/utils'
 
 interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
   note: Doc<'notes'>
@@ -64,7 +66,10 @@ export default function NoteCard(props: NoteProps) {
   // When merge mode is active on a selectable card the whole card becomes a
   // selection toggle: inner controls are suppressed and clicks pick the card.
   const selectionActive = mergeMode && selectable
-  const { users } = useRetro({ retroId: note.retroId })
+  const { users, retro } = useRetro({ retroId: note.retroId })
+  // Per-person vote budget for this retro (default 3) — used only for the
+  // "out of votes" toast copy; the real enforcement is server-side.
+  const maxLikes = retro?.maxLikes ?? 3
   const [editing, setEditing] = useState({
     value: false,
     note: {
@@ -116,6 +121,10 @@ export default function NoteCard(props: NoteProps) {
   }
 
   const assignedTo = users?.find(u => u?._id === note.assignedTo)
+
+  // You cannot vote on your own card (also enforced server-side). Used to hide
+  // the like control on the author's own note.
+  const isSelfNote = me?._id === note.userId
 
   const youLiked =
     me && note.likes && note.likes.length > 0 && note.likes.includes(me._id)
@@ -183,8 +192,14 @@ export default function NoteCard(props: NoteProps) {
     RemoveNote({ id: note._id })
   }, [RemoveNote, note._id])
 
-  const likeHandler = () => {
-    LikeNote({ noteId: note._id, userId: me!._id })
+  const likeHandler = async () => {
+    if (!me) return
+    // The mutation enforces the no-self-vote and per-person budget rules and
+    // reports back why a like was refused. Surface the budget case to the user.
+    const result = await LikeNote({ noteId: note._id, userId: me._id })
+    if (!result.ok && result.reason === 'budget') {
+      toast(`You've used all ${maxLikes} votes`)
+    }
   }
 
   const containerStyle = useMemo<string>(() => {
@@ -200,6 +215,24 @@ export default function NoteCard(props: NoteProps) {
     e.preventDefault()
     cardContextMenuRef?.current?.show(e)
   }
+
+  // Merge-mode visual state — deliberately non-overlapping so the states never
+  // fight each other (or the pink highlight `outline` on the wrapper):
+  //   - selectable & not selected → pointer + a subtle indigo hover ring
+  //   - selected                  → a solid ring (indigo for the merge target
+  //     at index 0, slate for the rest, including a selected group's children)
+  //   - ineligible / dimmed       → no affordance at all
+  // Using `ring` (a box-shadow) instead of `outline` lets the hover and
+  // selected states compose cleanly and not clash with the wrapper outline.
+  const mergeSelectionClasses = selected
+    ? cn(
+        'select-none ring-2',
+        selectionIndex === 0 ? 'ring-indigo-500' : 'ring-slate-400',
+        selectionActive && 'cursor-pointer',
+      )
+    : selectionActive
+      ? 'cursor-pointer select-none ring-2 ring-transparent hover:ring-indigo-300'
+      : ''
 
   const contextMenuItems = useMemo<MenuItem[]>(
     () => [
@@ -259,13 +292,12 @@ export default function NoteCard(props: NoteProps) {
     <div
       ref={cardRef}
       title={note.body}
-      className={`group relative transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle} ${
-        selected ? 'selected' : ''
-      } ${
-        selectionActive
-          ? 'cursor-pointer select-none hover:outline hover:outline-2 hover:outline-slate-300'
-          : ''
-      } ${rest.className}`}
+      className={cn(
+        'group relative w-full bg-white p-3 text-sm text-zinc-500 shadow transition-all',
+        containerStyle,
+        mergeSelectionClasses,
+        rest.className,
+      )}
       onClick={selectionActive ? onSelectToggle : undefined}
       onDoubleClick={selectionActive ? undefined : toggleEdition}
       onContextMenu={selectionActive ? undefined : showContextMenu}
@@ -284,7 +316,7 @@ export default function NoteCard(props: NoteProps) {
           <Unlink className="h-3.5 w-3.5" strokeWidth={1.5} />
         </button>
       )}
-      {mergeMode && selected && (
+      {mergeMode && selected && selectionIndex >= 0 && (
         <div
           className={`absolute -top-2 -right-2 z-10 flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-semibold text-white shadow ${
             selectionIndex === 0 ? 'bg-indigo-600' : 'bg-slate-500'
@@ -331,11 +363,27 @@ export default function NoteCard(props: NoteProps) {
 
         {!obfuscate && (
           <div className="flex justify-end items-center gap-2">
+            {/* Likes stay visible on every card — including your own — so the
+                author can see their score. Only the *action* is locked on a
+                self-note (also refused server-side): no click, muted, and a
+                not-allowed cursor to make it clear. */}
             <div
-              onClick={likeHandler}
-              className="flex items-center justify-center gap-1"
+              onClick={isSelfNote ? undefined : likeHandler}
+              title={
+                isSelfNote
+                  ? "You can't vote on your own card"
+                  : youLiked
+                    ? 'Remove your vote'
+                    : 'Vote for this card'
+              }
+              className={cn(
+                'flex items-center justify-center gap-1 rounded-md px-2 py-1 transition-colors',
+                isSelfNote
+                  ? 'cursor-not-allowed opacity-60'
+                  : 'cursor-pointer hover:bg-zinc-100',
+              )}
             >
-              <LikeIcon liked={youLiked} />
+              <LikeIcon liked={youLiked} disabled={isSelfNote} />
               {note.likes && note.likes.length > 0 && (
                 <p className="text-xs text-zinc-400">{note.likes.length}</p>
               )}

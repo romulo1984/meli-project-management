@@ -1,9 +1,9 @@
 import CapitalizeFirstLetter from "@/helpers/commons";
 import "./styles.scss";
 import useVoiceToText from "@/helpers/voiceToText";
-import { useEffect } from "react";
 import { MentionsInput, Mention } from "react-mentions";
 import { Doc } from "@convex/_generated/dataModel";
+import { Check } from "lucide-react";
 
 type Note = {
   body: string;
@@ -22,23 +22,33 @@ interface NoteFormProps {
 export default function NoteForm(props: NoteFormProps) {
   const { saveHandler, setNewNote, toggleOpened, newNote, opened, users } =
     props;
-  const { recognizing, text, startRecognition } = useVoiceToText();
+  const { recognizing, startRecognition, stopRecognition } = useVoiceToText(
+    (spokenText) => {
+      setNewNote?.({ ...newNote, body: CapitalizeFirstLetter(spokenText) });
+    }
+  );
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    stopRecognition();
     saveHandler(e);
   };
 
-  const transcript = () => {
+  // Toggle dictation: start fresh (clearing the field) or stop if listening.
+  const toggleDictation = () => {
+    if (recognizing) {
+      stopRecognition();
+      return;
+    }
     setNewNote?.({ ...newNote, body: "" });
     startRecognition();
   };
 
-  useEffect(() => {
-    if (text !== "") {
-      setNewNote?.({ ...newNote, body: CapitalizeFirstLetter(text) });
-    }
-  }, [text]);
+  // Closing the form must also cancel any in-flight dictation.
+  const handleClose = () => {
+    stopRecognition();
+    toggleOpened?.();
+  };
 
   const renderSuggestion = (
     suggestion: any,
@@ -101,7 +111,7 @@ export default function NoteForm(props: NoteFormProps) {
               />
             </MentionsInput>
             <div className="flex justify-between items-center">
-              <div className="flex items-center">
+              <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-zinc-500">
                 <input
                   id="anonymous-checkbox"
                   type="checkbox"
@@ -109,42 +119,44 @@ export default function NoteForm(props: NoteFormProps) {
                   onChange={(e) =>
                     setNewNote?.({ ...newNote, anonymous: e.target.checked })
                   }
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  className="peer sr-only"
                 />
-                <label
-                  htmlFor="anonymous-checkbox"
-                  className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                >
-                  Anonymous
-                </label>
-              </div>
-              <div className="flex justify-end">
+                <span className="flex h-5 w-5 items-center justify-center rounded-md border border-zinc-300 bg-white text-white transition-colors peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-200">
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                </span>
+                Anonymous
+              </label>
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={toggleOpened}
+                  onClick={handleClose}
                   type="button"
-                  className="bg-zinc-200 hover:bg-zinc-300 py-2 px-4 rounded-full text-center mr-2"
+                  title="Cancel"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 transition-colors hover:bg-zinc-200"
                 >
                   <svg
-                    className="fill-zinc-500"
+                    className="h-3.5 w-3.5 fill-current"
                     xmlns="http://www.w3.org/2000/svg"
-                    height="1em"
                     viewBox="0 0 384 512"
                   >
                     <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
                   </svg>
                 </button>
                 <button
-                  disabled={recognizing}
-                  onClick={transcript}
+                  onClick={toggleDictation}
                   type="button"
-                  className="bg-zinc-200 hover:bg-zinc-300 py-2 px-4 rounded-full text-center mr-2"
+                  title={recognizing ? "Stop listening" : "Dictate"}
+                  aria-pressed={recognizing}
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                    recognizing
+                      ? "bg-red-50 text-red-600 hover:bg-red-100"
+                      : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+                  }`}
                 >
                   <svg
-                    className={`fill-zinc-500 ${
-                      recognizing ? "selected-svg" : ""
+                    className={`h-4 w-4 fill-current ${
+                      recognizing ? "animate-pulse" : ""
                     }`}
                     xmlns="http://www.w3.org/2000/svg"
-                    height="1em"
                     viewBox="0 0 384 512"
                   >
                     <path d="M192 0C139 0 96 43 96 96V256c0 53 43 96 96 96s96-43 96-96V96c0-53-43-96-96-96zM64 216c0-13.3-10.7-24-24-24s-24 10.7-24 24v40c0 89.1 66.2 162.7 152 174.4V464H120c-13.3 0-24 10.7-24 24s10.7 24 24 24h72 72c13.3 0 24-10.7 24-24s-10.7-24-24-24H216V430.4c85.8-11.7 152-85.3 152-174.4V216c0-13.3-10.7-24-24-24s-24 10.7-24 24v40c0 70.7-57.3 128-128 128s-128-57.3-128-128V216z" />
@@ -153,9 +165,9 @@ export default function NoteForm(props: NoteFormProps) {
                 <button
                   id="btn-note-form-submit"
                   type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 py-2 px-6 rounded-lg text-center self-end"
+                  className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
                 >
-                  <span className="font-normal text-white">Save</span>
+                  Save
                 </button>
               </div>
             </div>
@@ -164,9 +176,9 @@ export default function NoteForm(props: NoteFormProps) {
           <button
             onClick={toggleOpened}
             type="button"
-            className="bg-zinc-200 hover:bg-zinc-300 p-4 mb-2 w-full rounded-xl text-center"
+            className="mb-2 w-full rounded-xl border border-dashed border-zinc-200 bg-white py-3 text-sm font-medium text-zinc-400 transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 hover:text-indigo-500"
           >
-            <span className="font-normal text-zinc-500">Write note</span>
+            + Write a note
           </button>
         )}
       </form>

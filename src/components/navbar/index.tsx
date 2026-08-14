@@ -19,13 +19,27 @@ const linkClass =
   'text-slate-600 hover:text-slate-400 transition-colors'
 
 function Brand() {
+  // On hover the color of the font itself animates: the letters turn
+  // transparent to reveal a gradient clipped to the text, which sweeps
+  // across the wordmark. No background — just the font color moving.
   return (
     <h1 className="text-2xl md:text-3xl font-bold">
-      <a href="/">
-        <span className="text-slate-400">/</span>
-        <span className="text-slate-600">retro</span>
-        <span className="text-pink-400">spec</span>
-        <span className="text-indigo-400">tool</span>
+      <a
+        href="/"
+        className="group inline-block bg-gradient-to-r from-indigo-500 via-pink-500 to-indigo-500 bg-[length:200%_auto] bg-clip-text hover:animate-[logoGradient_2.5s_linear_infinite]"
+      >
+        <span className="text-slate-400 transition-colors duration-300 group-hover:text-transparent">
+          /
+        </span>
+        <span className="text-slate-600 transition-colors duration-300 group-hover:text-transparent">
+          retro
+        </span>
+        <span className="text-pink-400 transition-colors duration-300 group-hover:text-transparent">
+          spec
+        </span>
+        <span className="text-indigo-400 transition-colors duration-300 group-hover:text-transparent">
+          tool
+        </span>
       </a>
     </h1>
   )
@@ -52,11 +66,14 @@ function AnonymousNav() {
   const { ready, hasName, name, avatar, openRename, promptName } = useIdentity()
 
   return (
-    <div className="flex justify-end items-center gap-6">
-      <Link className={linkClass} href="/new">
-        New
+    <div className="flex justify-end items-center gap-4 sm:gap-5">
+      <Link
+        href="/new"
+        className="rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
+      >
+        + New
       </Link>
-      <Link className={linkClass} href="/retros">
+      <Link className={`text-sm ${linkClass}`} href="/retros">
         My Retros
       </Link>
       <ChangelogBell />
@@ -66,7 +83,7 @@ function AnonymousNav() {
             type="button"
             onClick={openRename}
             title="Edit your name"
-            className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-zinc-100 transition-colors"
+            className="flex items-center gap-2 rounded-full border border-zinc-200/70 pl-1 pr-3 py-1 hover:bg-zinc-100 transition-colors"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -131,9 +148,11 @@ function ClerkNav() {
 
 export default function Navbar() {
   return (
-    <nav className="container mx-auto max-w-screen-xl py-6 px-6 flex justify-between items-center">
-      <Brand />
-      {CLERK_AUTH_ENABLED ? <ClerkNav /> : <AnonymousNav />}
-    </nav>
+    <header className="sticky top-0 z-30 border-b border-zinc-100 bg-white/80 backdrop-blur-md">
+      <nav className="container mx-auto max-w-screen-xl py-4 px-6 flex justify-between items-center">
+        <Brand />
+        {CLERK_AUTH_ENABLED ? <ClerkNav /> : <AnonymousNav />}
+      </nav>
+    </header>
   )
 }

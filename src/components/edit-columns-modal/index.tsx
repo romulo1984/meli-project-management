@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Id } from '@convex/_generated/dataModel'
 import { useMutation } from 'convex/react'
 import { api } from '@convex/_generated/api'
@@ -36,11 +36,21 @@ interface EditColumnsModalProps {
   goodLabel: string
   badLabel: string
   actionLabel: string
+  // When opened from a specific column's pencil, focus + select that input so
+  // the user can retype the label immediately. Falls back to the first field.
+  focusColumn?: Column
 }
 
 export default function EditColumnsModal(props: EditColumnsModalProps) {
-  const { retroId, open, onOpenChange, goodLabel, badLabel, actionLabel } =
-    props
+  const {
+    retroId,
+    open,
+    onOpenChange,
+    goodLabel,
+    badLabel,
+    actionLabel,
+    focusColumn,
+  } = props
   const UpdateColumnLabel = useMutation(api.retros.updateColumnLabel)
   const [labels, setLabels] = useState<Record<Column, string>>({
     good: goodLabel,
@@ -48,12 +58,31 @@ export default function EditColumnsModal(props: EditColumnsModalProps) {
     action: actionLabel,
   })
   const [saving, setSaving] = useState(false)
+  const inputRefs = useRef<Record<Column, HTMLInputElement | null>>({
+    good: null,
+    bad: null,
+    action: null,
+  })
 
   // Seed the fields with the current labels each time the modal opens.
   useEffect(() => {
     if (!open) return
     setLabels({ good: goodLabel, bad: badLabel, action: actionLabel })
   }, [open, goodLabel, badLabel, actionLabel])
+
+  // Focus + select the clicked column's input once the dialog has mounted.
+  // A small timeout lets Radix finish opening before we move focus (matching
+  // the other modals), and select-all lets the user retype straight away.
+  useEffect(() => {
+    if (!open) return
+    const target = focusColumn ?? 'good'
+    const timeout = setTimeout(() => {
+      const input = inputRefs.current[target]
+      input?.focus()
+      input?.select()
+    }, 50)
+    return () => clearTimeout(timeout)
+  }, [open, focusColumn])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -110,6 +139,9 @@ export default function EditColumnsModal(props: EditColumnsModalProps) {
               </label>
               <input
                 id={`column-label-${column}`}
+                ref={el => {
+                  inputRefs.current[column] = el
+                }}
                 value={labels[column]}
                 maxLength={MAX_COLUMN_LABEL_LENGTH}
                 onChange={e =>

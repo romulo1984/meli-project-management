@@ -4,6 +4,7 @@ import useVoiceToText from "@/helpers/voiceToText";
 import { useEffect } from "react";
 import { MentionsInput, Mention } from "react-mentions";
 import { Doc } from "@convex/_generated/dataModel";
+import { Check } from "lucide-react";
 
 type Note = {
   body: string;
@@ -101,7 +102,7 @@ export default function NoteForm(props: NoteFormProps) {
               />
             </MentionsInput>
             <div className="flex justify-between items-center">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-500">
+              <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-zinc-500">
                 <input
                   id="anonymous-checkbox"
                   type="checkbox"
@@ -109,8 +110,11 @@ export default function NoteForm(props: NoteFormProps) {
                   onChange={(e) =>
                     setNewNote?.({ ...newNote, anonymous: e.target.checked })
                   }
-                  className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-2 focus:ring-indigo-200"
+                  className="peer sr-only"
                 />
+                <span className="flex h-5 w-5 items-center justify-center rounded-md border border-zinc-300 bg-white text-white transition-colors peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-200">
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                </span>
                 Anonymous
               </label>
               <div className="flex items-center gap-2">

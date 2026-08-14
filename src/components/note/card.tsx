@@ -383,7 +383,7 @@ export default function NoteCard(props: NoteProps) {
                   : 'cursor-pointer hover:bg-zinc-100',
               )}
             >
-              <LikeIcon liked={youLiked} />
+              <LikeIcon liked={youLiked} disabled={isSelfNote} />
               {note.likes && note.likes.length > 0 && (
                 <p className="text-xs text-zinc-400">{note.likes.length}</p>
               )}

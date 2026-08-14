@@ -19,20 +19,28 @@ const linkClass =
   'text-slate-600 hover:text-slate-400 transition-colors'
 
 function Brand() {
-  // Subtle staggered "wave" lift of each segment on hover.
+  // On hover: a subtle staggered "wave" lift of each segment, over a soft
+  // animated gradient glow that fades in behind the wordmark.
   return (
     <h1 className="text-2xl md:text-3xl font-bold">
-      <a href="/" className="group inline-flex items-baseline">
-        <span className="inline-block text-slate-400 transition-transform duration-300 ease-out group-hover:-translate-y-1">
+      <a
+        href="/"
+        className="group relative -mx-2 inline-flex items-baseline rounded-lg px-2 py-0.5"
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-100 via-pink-100 to-indigo-100 bg-[length:200%_100%] opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:animate-[logoGradient_2.5s_linear_infinite]"
+        />
+        <span className="relative inline-block text-slate-400 transition-transform duration-300 ease-out group-hover:-translate-y-1">
           /
         </span>
-        <span className="inline-block text-slate-600 transition-transform duration-300 ease-out [transition-delay:40ms] group-hover:-translate-y-1">
+        <span className="relative inline-block text-slate-600 transition-transform duration-300 ease-out [transition-delay:40ms] group-hover:-translate-y-1">
           retro
         </span>
-        <span className="inline-block text-pink-400 transition-transform duration-300 ease-out [transition-delay:80ms] group-hover:-translate-y-1">
+        <span className="relative inline-block text-pink-400 transition-transform duration-300 ease-out [transition-delay:80ms] group-hover:-translate-y-1">
           spec
         </span>
-        <span className="inline-block text-indigo-400 transition-transform duration-300 ease-out [transition-delay:120ms] group-hover:-translate-y-1">
+        <span className="relative inline-block text-indigo-400 transition-transform duration-300 ease-out [transition-delay:120ms] group-hover:-translate-y-1">
           tool
         </span>
       </a>

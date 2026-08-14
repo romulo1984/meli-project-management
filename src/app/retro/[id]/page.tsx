@@ -157,6 +157,8 @@ export default function Retro(props: RetroProps) {
   const badLabel = retro?.badLabel || 'Bad'
   const actionLabel = retro?.actionLabel || 'Actions'
   const isOwner = retro?.ownerId === me?._id
+  // When sorting by votes, manual drag-reordering is meaningless — disable it.
+  const sortByVotes = Boolean(retro?.sortByVotes)
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
@@ -265,6 +267,7 @@ export default function Retro(props: RetroProps) {
   // Drag & drop now only reorders cards within a column. Merging is handled by
   // the dedicated merge mode (see MergeModeBar / useSelectedNotes).
   const handleDragEnd = (event: DragEndEvent) => {
+    if (sortByVotes) return
     const { over, active } = event
 
     if (over && over?.id !== active?.id) {
@@ -430,7 +433,7 @@ export default function Retro(props: RetroProps) {
                     strategy={verticalListSortingStrategy}
                   >
                     {parsedNotes.good?.map(note => (
-                      <Sortable key={note._id} id={note._id} disabled={mergeMode}>
+                      <Sortable key={note._id} id={note._id} disabled={mergeMode || sortByVotes}>
                         <div className="w-full" {...highlightHandlers(note._id)}>
                           <Note
                             highlighted={highlightedNoteId === note._id}
@@ -490,7 +493,7 @@ export default function Retro(props: RetroProps) {
                     strategy={verticalListSortingStrategy}
                   >
                     {parsedNotes.bad?.map(note => (
-                      <Sortable key={note._id} id={note._id} disabled={mergeMode}>
+                      <Sortable key={note._id} id={note._id} disabled={mergeMode || sortByVotes}>
                         <div className="w-full" {...highlightHandlers(note._id)}>
                           <Note
                             highlighted={highlightedNoteId === note._id}
@@ -586,7 +589,7 @@ export default function Retro(props: RetroProps) {
                       </div>
                     )}
                     {parsedNotes.action?.map(note => (
-                      <Sortable key={note._id} id={note._id} disabled={mergeMode}>
+                      <Sortable key={note._id} id={note._id} disabled={mergeMode || sortByVotes}>
                         <div className="w-full" {...highlightHandlers(note._id)}>
                           <Note
                             className={

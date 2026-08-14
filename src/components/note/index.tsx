@@ -10,14 +10,11 @@ interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
   me?: Doc<'users'> | undefined | null
   actionType?: boolean
   blur?: boolean
-  highlighted?: boolean
   childrenNotes?: Doc<'notes'>[]
-  toggleNote: (
-    event: React.MouseEvent<HTMLDivElement>,
-    note: Doc<'notes'>,
-  ) => void
-  selectedNotes: Doc<'notes'>[]
-  mergeSelectedNotes: (parent: Doc<'notes'>) => void
+  mergeMode?: boolean
+  selectedPipeline?: string | null
+  selectedNotes?: Doc<'notes'>[]
+  toggleNote?: (note: Doc<'notes'>) => void
 }
 
 export default function Note(props: NoteProps) {
@@ -27,11 +24,11 @@ export default function Note(props: NoteProps) {
     actionType,
     blur = false,
     childrenNotes = [],
-    highlighted,
     users = [],
+    mergeMode = false,
+    selectedPipeline = null,
+    selectedNotes = [],
     toggleNote,
-    selectedNotes,
-    mergeSelectedNotes,
     ...rest
   } = props
 
@@ -45,12 +42,27 @@ export default function Note(props: NoteProps) {
   })
 
   const hasChildren = childrenNotes && childrenNotes.length > 0
+  const isMerged = note.mergeParentId !== undefined
+
+  // In merge mode a card can be picked only if it is a stand-alone note in the
+  // column currently being merged (a merge is scoped to a single pipeline).
+  const selectable =
+    mergeMode &&
+    !hasChildren &&
+    !isMerged &&
+    (selectedPipeline === null || selectedPipeline === note.pipeline)
+
+  const selectionIndex = selectedNotes.findIndex(n => n._id === note._id)
+  const selected = selectionIndex !== -1
+  // Cards that exist while merge mode is on but cannot take part in the
+  // current merge (a merged group, or a different column) recede visually.
+  const dimmed = mergeMode && !selectable && !selected
 
   return (
     <div
-      className={`merge-container ${highlighted ? 'highlighted' : ''} ${
+      className={`merge-container ${
         isGenerating ? 'generating-action-items-intermittent' : ''
-      }`}
+      } ${dimmed ? 'opacity-50' : ''}`}
     >
       <NoteCard
         {...rest}
@@ -61,12 +73,12 @@ export default function Note(props: NoteProps) {
         blur={blur}
         roundTop
         roundBottom={!hasChildren}
-        onClick={!hasChildren ? e => toggleNote(e, note) : () => {}}
-        selected={!hasChildren && !!selectedNotes.find(n => n._id === note._id)}
-        mergeSelectedNotes={mergeSelectedNotes}
-        selectedNotes={selectedNotes}
+        mergeMode={mergeMode}
+        selectable={selectable}
+        selected={selected}
+        selectionIndex={selectionIndex}
+        onSelectToggle={() => toggleNote && toggleNote(note)}
         childrenNotes={childrenNotes}
-        toggleNote={toggleNote}
         generateActionItems={generateActionItems}
         isGenerating={isGenerating}
       />

@@ -6,50 +6,74 @@ import { useMutation } from 'convex/react'
 
 export default function useSelectedNotes() {
   const MergeNotes = useMutation(api.notes.mergeMultiple)
-  const [selectedPipeline, setselectedPipeline] = useState<string | null>(null)
+  const [mergeMode, setMergeMode] = useState(false)
+  const [selectedPipeline, setSelectedPipeline] = useState<string | null>(null)
   const [selectedNotes, setSelectedNotes] = useState<Doc<'notes'>[]>([])
 
+  const clearSelection = useCallback(() => {
+    setSelectedNotes([])
+    setSelectedPipeline(null)
+  }, [])
+
+  // Toggle a note in/out of the current selection. Selection order is
+  // preserved, so the first picked note is the merge parent. Merges are
+  // scoped to a single column, so picking a note from another pipeline
+  // restarts the selection in that pipeline.
   const toggleNote = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>, note: Doc<'notes'>) => {
-      if (event.ctrlKey || event.metaKey) {
-        setSelectedNotes(prev => {
-          if (prev.includes(note)) return prev.filter(n => n !== note)
+    (note: Doc<'notes'>) => {
+      setSelectedNotes(prev => {
+        const alreadySelected = prev.some(n => n._id === note._id)
 
-          if (note.pipeline !== selectedPipeline) {
-            setselectedPipeline(note.pipeline)
-            return [note]
-          }
+        if (alreadySelected) {
+          const next = prev.filter(n => n._id !== note._id)
+          if (next.length === 0) setSelectedPipeline(null)
+          return next
+        }
 
-          setselectedPipeline(note.pipeline)
-          return [...prev, note]
-        })
-      }
+        if (note.pipeline !== selectedPipeline) {
+          setSelectedPipeline(note.pipeline)
+          return [note]
+        }
+
+        return [...prev, note]
+      })
     },
     [selectedPipeline],
   )
 
-  const mergeSelectedNotes = useCallback(
-    (parent: Doc<'notes'>) => {
-      if (selectedNotes.length > 1) {
-        const parentId = parent._id
-        const sourceIds = selectedNotes
-          .filter(n => n._id !== parentId)
-          .map(n => n._id)
+  const enterMergeMode = useCallback(() => {
+    setMergeMode(true)
+  }, [])
 
-        MergeNotes({
-          sourceIds,
-          parentId,
-        })
-        setSelectedNotes([])
-      }
-    },
-    [MergeNotes, selectedNotes],
-  )
+  const exitMergeMode = useCallback(() => {
+    setMergeMode(false)
+    setSelectedNotes([])
+    setSelectedPipeline(null)
+  }, [])
+
+  // Merge every selected note into the first one picked (the parent).
+  const mergeSelectedNotes = useCallback(() => {
+    if (selectedNotes.length < 2) return
+
+    const [parent, ...sources] = selectedNotes
+
+    MergeNotes({
+      parentId: parent._id,
+      sourceIds: sources.map(n => n._id),
+    })
+
+    setSelectedNotes([])
+    setSelectedPipeline(null)
+  }, [MergeNotes, selectedNotes])
 
   return {
+    mergeMode,
+    enterMergeMode,
+    exitMergeMode,
     selectedNotes,
+    selectedPipeline,
     toggleNote,
     mergeSelectedNotes,
-    selectedPipeline,
+    clearSelection,
   }
 }

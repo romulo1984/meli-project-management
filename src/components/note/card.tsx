@@ -23,17 +23,14 @@ interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
   me?: Doc<'users'> | undefined | null
   actionType?: boolean
   blur?: boolean
-  highlighted?: boolean
   selected?: boolean
   childrenNotes?: Doc<'notes'>[]
   roundTop: boolean
   roundBottom: boolean
-  mergeSelectedNotes?: (parent: Doc<'notes'>) => void
-  toggleNote?: (
-    event: React.MouseEvent<HTMLDivElement>,
-    note: Doc<'notes'>,
-  ) => void
-  selectedNotes?: Doc<'notes'>[]
+  mergeMode?: boolean
+  selectable?: boolean
+  selectionIndex?: number
+  onSelectToggle?: () => void
   generateActionItems: () => void
   isGenerating: boolean
 }
@@ -53,14 +50,19 @@ export default function NoteCard(props: NoteProps) {
     roundTop,
     roundBottom,
     selected = false,
-    mergeSelectedNotes,
-    toggleNote,
-    selectedNotes = [],
+    mergeMode = false,
+    selectable = false,
+    selectionIndex = -1,
+    onSelectToggle,
     childrenNotes = [],
     generateActionItems,
     isGenerating,
     ...rest
   } = props
+
+  // When merge mode is active on a selectable card the whole card becomes a
+  // selection toggle: inner controls are suppressed and clicks pick the card.
+  const selectionActive = mergeMode && selectable
   const { users } = useRetro({ retroId: note.retroId })
   const [editing, setEditing] = useState({
     value: false,
@@ -208,43 +210,6 @@ export default function NoteCard(props: NoteProps) {
         command: toggleEdition,
       },
       {
-        label: 'Select',
-        icon: 'pi pi-plus-circle',
-        visible:
-          note.mergeParentId === undefined &&
-          childrenNotes.length === 0 &&
-          !selected,
-        command: () => {
-          toggleNote && toggleNote({ ctrlKey: true } as any, note)
-        },
-      },
-      {
-        label: 'Unselect',
-        icon: 'pi pi-minus-circle',
-        visible: selected,
-        command: () => {
-          toggleNote && toggleNote({ ctrlKey: true } as any, note)
-        },
-      },
-      {
-        // @ts-ignore
-        label: (
-          <div>
-            <p>Merge</p>
-            <p className="text-xs">
-              <span className="text-slate-500 bg-slate-100 rounded-lg pe-1">{`${note.body.substring(
-                0,
-                20,
-              )}...`}</span>
-              <span> as parent</span>
-            </p>
-          </div>
-        ),
-        icon: 'pi pi-table',
-        visible: selectedNotes.length > 1 && selected,
-        command: () => mergeSelectedNotes && mergeSelectedNotes(note),
-      },
-      {
         label: 'Unmerge',
         icon: 'pi pi-clone',
         visible: note.mergeParentId !== undefined,
@@ -276,13 +241,9 @@ export default function NoteCard(props: NoteProps) {
       Unmerge,
       UnmergeAll,
       isOwner,
-      mergeSelectedNotes,
       note,
-      selected,
-      selectedNotes.length,
       speechNote,
       toggleEdition,
-      toggleNote,
       childrenNotes,
       generateActionItems,
       isGenerating,
@@ -293,12 +254,27 @@ export default function NoteCard(props: NoteProps) {
     <div
       ref={cardRef}
       title={note.body}
-      className={`transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle} ${
+      className={`relative transition-all w-full bg-white p-3 text-zinc-500 text-sm shadow ${containerStyle} ${
         selected ? 'selected' : ''
+      } ${
+        selectionActive
+          ? 'cursor-pointer select-none hover:outline hover:outline-2 hover:outline-slate-300'
+          : ''
       } ${rest.className}`}
-      onDoubleClick={toggleEdition}
-      onContextMenu={showContextMenu}
+      onClick={selectionActive ? onSelectToggle : undefined}
+      onDoubleClick={selectionActive ? undefined : toggleEdition}
+      onContextMenu={selectionActive ? undefined : showContextMenu}
     >
+      {mergeMode && selected && (
+        <div
+          className={`absolute -top-2 -right-2 z-10 flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-semibold text-white shadow ${
+            selectionIndex === 0 ? 'bg-indigo-600' : 'bg-slate-500'
+          }`}
+          title={selectionIndex === 0 ? 'Parent card' : `Card ${selectionIndex + 1}`}
+        >
+          {selectionIndex === 0 ? 'Parent' : selectionIndex + 1}
+        </div>
+      )}
       <div className={`break-anywhere mb-2 ${obfuscate ? 'blur-sm' : ''}`}>
         {!editing.value && (
           <NoteBody note={note} users={users} obfuscate={obfuscate} />
@@ -327,7 +303,11 @@ export default function NoteCard(props: NoteProps) {
           />
         )}
       </div>
-      <div className="flex justify-between items-center">
+      <div
+        className={`flex justify-between items-center ${
+          selectionActive ? 'pointer-events-none' : ''
+        }`}
+      >
         {LeftBottomIcons()}
 
         {!obfuscate && (

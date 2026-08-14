@@ -1,4 +1,5 @@
 'use client'
+import EditColumnsModal from '@/components/edit-columns-modal'
 import InlineEditName from '@/components/inline-edit-name'
 import Loading from '@/components/loading'
 import NotLoggedAlert from '@/components/not-logged-alert'
@@ -18,12 +19,10 @@ import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
 import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
+import MergeModeBar from '@/components/merge-mode-bar'
 import {
   DndContext,
-  DragCancelEvent,
   DragEndEvent,
-  DragOverEvent,
-  Over,
   UniqueIdentifier,
   closestCenter,
 } from '@dnd-kit/core'
@@ -33,9 +32,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useMutation } from 'convex/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { confirmAlert } from 'react-confirm-alert'
-import 'react-confirm-alert/src/react-confirm-alert.css'
+import { useEffect, useMemo, useState } from 'react'
 import { useGenerateActionItems } from '@/helpers/hooks/useGenerateActionItems'
 import { SelectModel } from '@/components/select-model'
 
@@ -76,6 +73,7 @@ export default function Retro(props: RetroProps) {
     good: false,
     action: false,
   })
+  const [isEditColumnsOpen, setEditColumnsOpen] = useState(false)
   const {
     isLoading,
     retro,
@@ -89,7 +87,6 @@ export default function Retro(props: RetroProps) {
   } = useRetro({ retroId })
   const CreateNote = useMutation(api.notes.store)
   const UpdatePositions = useMutation(api.notes.updatePositions)
-  const MergeNotes = useMutation(api.notes.merge)
   const { hasName, ready, promptName } = useIdentity()
   useJoinRetro({ retroId })
 
@@ -101,9 +98,15 @@ export default function Retro(props: RetroProps) {
   const { handleSettingChange } = useSettings({
     retroId: retroId,
   })
-  const mergeOverRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [mergeTarget, setMergeTarget] = useState<Over>()
-  const { toggleNote, selectedNotes, mergeSelectedNotes } = useSelectedNotes()
+  const {
+    mergeMode,
+    enterMergeMode,
+    exitMergeMode,
+    selectedNotes,
+    selectedPipeline,
+    toggleNote,
+    mergeSelectedNotes,
+  } = useSelectedNotes()
   const { generateActionItems, isGenerating } = useGenerateActionItems({
     retroId,
     userId: me?._id,
@@ -128,6 +131,12 @@ export default function Retro(props: RetroProps) {
           onMouseLeave: () => highlightNote(undefined),
         }
       : undefined
+
+  // Column labels are owner-editable; fall back to the defaults when unset/empty.
+  const goodLabel = retro?.goodLabel || 'Good'
+  const badLabel = retro?.badLabel || 'Bad'
+  const actionLabel = retro?.actionLabel || 'Actions'
+  const canEditLabels = retro?.ownerId === me?._id
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
@@ -211,15 +220,10 @@ export default function Retro(props: RetroProps) {
       day: 'numeric',
     })
 
-  const handleDragCancel = (event: DragCancelEvent) => {
-    mergeOverRef.current && clearTimeout(mergeOverRef.current)
-    setMergeTarget(undefined)
-  }
-
+  // Drag & drop now only reorders cards within a column. Merging is handled by
+  // the dedicated merge mode (see MergeModeBar / useSelectedNotes).
   const handleDragEnd = (event: DragEndEvent) => {
     const { over, active } = event
-    mergeOverRef.current && clearTimeout(mergeOverRef.current)
-    setMergeTarget(undefined)
 
     if (over && over?.id !== active?.id) {
       const items = [...active?.data?.current?.sortable?.items]
@@ -234,54 +238,9 @@ export default function Retro(props: RetroProps) {
     }
   }
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over, active } = event
-
-    if (!over || !active) {
-      return
-    }
-
-    if (over.id === active.id) {
-      return
-    }
-
-    const overNote = notes?.find(n => n._id === over.id)!
-    const activeNote = notes?.find(n => n._id === active.id)!
-
-    if (overNote.pipeline !== activeNote.pipeline) {
-      return
-    }
-
-    setTimeout(setMergeTarget, 300, over)
-    mergeOverRef.current && clearTimeout(mergeOverRef.current)
-    mergeOverRef.current = setTimeout(() => {
-      clearTimeout(mergeOverRef.current!)
-
-      confirmAlert({
-        title: 'Merge contents',
-        message:
-          'Do you want to merge the contents of both cards? This action is unreversible',
-        buttons: [
-          {
-            label: 'No',
-            onClick: () => null,
-          },
-          {
-            label: 'Yes, merge',
-            onClick: () => {
-              MergeNotes({
-                sourceId: activeNote._id,
-                parentId: overNote._id,
-              })
-
-              setMergeTarget(undefined)
-            },
-          },
-        ],
-      })
-    }, 600)
-  }
-
+  // Rows for the gear settings menu. "Hide notes" is a toggle; "Edit columns"
+  // is an owner-only action that opens the label editor. Add a new setting by
+  // appending one object here — SettingsMenu renders toggles and actions alike.
   const settingsMenuItems: SettingsMenuItem[] = [
     {
       key: settings.notesShowingStatus.key,
@@ -289,10 +248,15 @@ export default function Retro(props: RetroProps) {
       description: 'Blur every note until you reveal them',
       active: settings.notesShowingStatus.value === 'hidden',
       disabled: !hasName,
-      onToggle: () => {
-        if (!hasName) return
-        handleSettingChange(settings.notesShowingStatus.key, settings)
-      },
+      onToggle: () =>
+        handleSettingChange(settings.notesShowingStatus.key, settings),
+    },
+    {
+      key: 'merge_mode',
+      label: 'Merge mode',
+      description: 'Select cards to group them together',
+      active: mergeMode,
+      onToggle: mergeMode ? exitMergeMode : enterMergeMode,
     },
     {
       key: 'highlight_mode',
@@ -306,6 +270,15 @@ export default function Retro(props: RetroProps) {
     },
   ]
 
+  if (canEditLabels) {
+    settingsMenuItems.push({
+      key: 'edit_columns',
+      label: 'Edit columns…',
+      description: 'Rename the Good / Bad / Actions columns',
+      onSelect: () => setEditColumnsOpen(true),
+    })
+  }
+
   // const showGenerateActionItemsButton =
   //   parsedNotes.bad.length > 0 &&
   //   parsedNotes.action.length === 0 &&
@@ -316,12 +289,7 @@ export default function Retro(props: RetroProps) {
   const showGenerateActionItemsButton = false
 
   return (
-    <DndContext
-      onDragEnd={handleDragEnd}
-      onDragOver={handleDragOver}
-      onDragCancel={handleDragCancel}
-      collisionDetection={closestCenter}
-    >
+    <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
       <main className="container mx-auto min-h-screen max-w-screen-xl py-6 px-6 flex flex-col">
         {isLoading ? (
           <Loading />
@@ -355,7 +323,7 @@ export default function Retro(props: RetroProps) {
             <div className="grid md:grid-cols-3 gap-6">
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <h3 className="text-lg text-zinc-500 mb-4">Good</h3>
+                  <p className="text-lg text-zinc-500 mb-4">{goodLabel}</p>
                   <p className="text-zinc-400">{parsedNotes.good?.length}</p>
                 </div>
                 {hasName && (
@@ -374,24 +342,20 @@ export default function Retro(props: RetroProps) {
                     strategy={verticalListSortingStrategy}
                   >
                     {parsedNotes.good?.map(note => (
-                      <Sortable key={note._id} id={note._id}>
+                      <Sortable key={note._id} id={note._id} disabled={mergeMode}>
                         <div className="w-full" {...highlightHandlers(note._id)}>
                           <Note
-                            highlighted={
-                              mergeTarget?.id === note._id ||
-                              highlightedNoteId === note._id
-                            }
+                            highlighted={highlightedNoteId === note._id}
                             key={note._id}
                             note={note}
                             users={users}
                             me={me}
-                            blur={
-                              settings.notesShowingStatus.value === 'hidden'
-                            }
+                            blur={settings.notesShowingStatus.value === 'hidden'}
                             childrenNotes={parsedNotes.children[note._id]}
+                            mergeMode={mergeMode}
+                            selectedPipeline={selectedPipeline}
                             selectedNotes={selectedNotes}
                             toggleNote={toggleNote}
-                            mergeSelectedNotes={mergeSelectedNotes}
                           />
                         </div>
                       </Sortable>
@@ -401,7 +365,7 @@ export default function Retro(props: RetroProps) {
               </div>
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <h3 className="text-lg text-zinc-500 mb-4">Bad</h3>
+                  <p className="text-lg text-zinc-500 mb-4">{badLabel}</p>
                   <p className="text-zinc-400">{parsedNotes.bad?.length}</p>
                 </div>
                 {hasName && (
@@ -420,24 +384,20 @@ export default function Retro(props: RetroProps) {
                     strategy={verticalListSortingStrategy}
                   >
                     {parsedNotes.bad?.map(note => (
-                      <Sortable key={note._id} id={note._id}>
+                      <Sortable key={note._id} id={note._id} disabled={mergeMode}>
                         <div className="w-full" {...highlightHandlers(note._id)}>
                           <Note
-                            highlighted={
-                              mergeTarget?.id === note._id ||
-                              highlightedNoteId === note._id
-                            }
+                            highlighted={highlightedNoteId === note._id}
                             key={note._id}
                             note={note}
                             users={users}
                             me={me}
-                            blur={
-                              settings.notesShowingStatus.value === 'hidden'
-                            }
+                            blur={settings.notesShowingStatus.value === 'hidden'}
                             childrenNotes={parsedNotes.children[note._id]}
+                            mergeMode={mergeMode}
+                            selectedPipeline={selectedPipeline}
                             selectedNotes={selectedNotes}
                             toggleNote={toggleNote}
-                            mergeSelectedNotes={mergeSelectedNotes}
                           />
                         </div>
                       </Sortable>
@@ -447,15 +407,15 @@ export default function Retro(props: RetroProps) {
               </div>
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <h3 className="text-lg text-zinc-500 mb-4 flex items-center gap-2">
-                    <p>Actions</p>
+                  <div className="text-lg text-zinc-500 mb-4 flex items-center gap-2 w-full">
+                    <span>{actionLabel}</span>
                     {isGenerating && (
                       <Sparkles
                         className="mr-2 h-4 w-4 text-violet-800 generating-action-items-intermittent"
                         strokeWidth="1"
                       />
                     )}
-                  </h3>
+                  </div>
                   <p className="text-zinc-400">{parsedNotes.action?.length}</p>
                 </div>
                 {hasName && (
@@ -503,28 +463,24 @@ export default function Retro(props: RetroProps) {
                       </div>
                     )}
                     {parsedNotes.action?.map(note => (
-                      <Sortable key={note._id} id={note._id}>
+                      <Sortable key={note._id} id={note._id} disabled={mergeMode}>
                         <div className="w-full" {...highlightHandlers(note._id)}>
                           <Note
                             className={
                               isGenerating ? 'generating-action-items' : ''
                             }
-                            highlighted={
-                              mergeTarget?.id === note._id ||
-                              highlightedNoteId === note._id
-                            }
+                            highlighted={highlightedNoteId === note._id}
                             key={note._id}
                             note={note}
                             users={users}
                             me={me}
                             actionType={hasName}
-                            blur={
-                              settings.notesShowingStatus.value === 'hidden'
-                            }
+                            blur={settings.notesShowingStatus.value === 'hidden'}
                             childrenNotes={parsedNotes.children[note._id]}
+                            mergeMode={mergeMode}
+                            selectedPipeline={selectedPipeline}
                             selectedNotes={selectedNotes}
                             toggleNote={toggleNote}
-                            mergeSelectedNotes={mergeSelectedNotes}
                           />
                         </div>
                       </Sortable>
@@ -533,6 +489,23 @@ export default function Retro(props: RetroProps) {
                 )}
               </div>
             </div>
+            {canEditLabels && (
+              <EditColumnsModal
+                retroId={retro?._id}
+                open={isEditColumnsOpen}
+                onOpenChange={setEditColumnsOpen}
+                goodLabel={goodLabel}
+                badLabel={badLabel}
+                actionLabel={actionLabel}
+              />
+            )}
+            {mergeMode && (
+              <MergeModeBar
+                count={selectedNotes.length}
+                onMerge={mergeSelectedNotes}
+                onCancel={exitMergeMode}
+              />
+            )}
           </>
         )}
       </main>

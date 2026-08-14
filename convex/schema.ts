@@ -42,6 +42,11 @@ export default defineSchema({
     // optional/backward-compatible (undefined = highlight mode off / nothing highlighted).
     highlightControllerId: v.optional(v.id('users')),
     highlightedNoteId: v.optional(v.id('notes')),
+    // Optional custom display labels for the three columns. When unset/empty the
+    // client falls back to the hardcoded defaults ("Good"/"Bad"/"Actions").
+    goodLabel: v.optional(v.string()),
+    badLabel: v.optional(v.string()),
+    actionLabel: v.optional(v.string()),
     // Optional, unused by the current app (feature/encrypted-notes compat) — see notes table.
     encryptionEnabled: v.optional(v.boolean()),
     keyVersion: v.optional(v.number()),

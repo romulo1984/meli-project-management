@@ -7,6 +7,10 @@ const unknownUser = {
   name: 'Unknown',
 }
 
+// Custom column labels are short display strings; clamp to keep storage bounded
+// and headers readable. Rendered through React (auto-escaped), never raw markup.
+const MAX_COLUMN_LABEL_LENGTH = 30
+
 export const get = query({
   args: { id: v.id('retros') },
   handler: async (ctx, args) => {
@@ -229,5 +233,30 @@ export const setHighlightedNote = mutation({
 
     await ctx.db.patch(retro._id, { highlightedNoteId: args.noteId })
     return true
+  },
+})
+
+export const updateColumnLabel = mutation({
+  // `column` is an allowlist of the fixed pipeline values (least-permissive
+  // validation); `label` is trimmed and length-clamped below before storage.
+  args: {
+    id: v.id('retros'),
+    column: v.union(v.literal('good'), v.literal('bad'), v.literal('action')),
+    label: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+
+    if (retro) {
+      const label = args.label.trim().slice(0, MAX_COLUMN_LABEL_LENGTH)
+
+      if (args.column === 'good') {
+        await ctx.db.patch(retro._id, { goodLabel: label })
+      } else if (args.column === 'bad') {
+        await ctx.db.patch(retro._id, { badLabel: label })
+      } else {
+        await ctx.db.patch(retro._id, { actionLabel: label })
+      }
+    }
   },
 })

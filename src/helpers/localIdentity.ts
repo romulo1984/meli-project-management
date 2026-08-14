@@ -22,10 +22,30 @@
 const STORAGE_KEY = 'retrospectool.identity.v1'
 export const MAX_NAME_LENGTH = 40
 
+/**
+ * Max length of a stored custom-avatar data URI (~100KB). The uploaded image is
+ * re-encoded to a small canvas before storage (see helpers/avatarImage.ts), so
+ * this keeps both the localStorage record and the persisted DB string small.
+ */
+export const MAX_AVATAR_DATA_URI_LENGTH = 100 * 1024
+
 export interface StoredIdentity {
   anonId: string
   name: string
+  /** Optional custom uploaded avatar (base64 raster data URI). */
+  avatar?: string
 }
+
+/**
+ * Accept only a small, base64-encoded raster data URI as a stored avatar. This
+ * is an allowlist (png/jpeg/webp), so it rejects `data:image/svg+xml,...`
+ * (SVG can execute script), oversized strings, and any other junk — defense in
+ * depth against a tampered localStorage record.
+ */
+const isStoredAvatar = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  value.length <= MAX_AVATAR_DATA_URI_LENGTH &&
+  /^data:image\/(png|jpeg|webp);base64,/.test(value)
 
 const isBrowser = (): boolean => typeof window !== 'undefined'
 
@@ -61,7 +81,12 @@ const readStorage = (): StoredIdentity | null => {
     if (!raw) return null
     const parsed = JSON.parse(raw) as Partial<StoredIdentity>
     if (!parsed || typeof parsed.anonId !== 'string' || !parsed.anonId) return null
-    return { anonId: parsed.anonId, name: normalizeName(parsed.name ?? '') }
+    // Backward compatible: older records had no `avatar` key (undefined here).
+    return {
+      anonId: parsed.anonId,
+      name: normalizeName(parsed.name ?? ''),
+      avatar: isStoredAvatar(parsed.avatar) ? parsed.avatar : undefined,
+    }
   } catch {
     return null
   }
@@ -88,10 +113,39 @@ export const ensureAnonId = (): string => {
 
 export const getStoredName = (): string => readStorage()?.name ?? ''
 
-/** Persist the display name against the existing anon id (creating id if absent). */
+/** Current custom uploaded avatar, or null when using the generated letter. */
+export const getStoredAvatar = (): string | null => readStorage()?.avatar ?? null
+
+/**
+ * Persist the display name against the existing anon id (creating id if absent).
+ * A previously uploaded custom avatar is preserved — renaming must not wipe it.
+ */
 export const persistName = (name: string): StoredIdentity => {
-  const anonId = ensureAnonId()
-  const identity: StoredIdentity = { anonId, name: normalizeName(name) }
+  const existing = readStorage()
+  const anonId = existing?.anonId ?? ensureAnonId()
+  const identity: StoredIdentity = {
+    anonId,
+    name: normalizeName(name),
+    avatar: existing?.avatar,
+  }
+  writeStorage(identity)
+  return identity
+}
+
+/**
+ * Persist (or clear, when null) the custom uploaded avatar against the existing
+ * identity, preserving the display name. Pass null to fall back to the
+ * generated letter avatar. The value is re-validated on write (defense in
+ * depth) so only a small raster data URI is ever stored.
+ */
+export const persistAvatar = (avatar: string | null): StoredIdentity => {
+  const existing = readStorage()
+  const anonId = existing?.anonId ?? ensureAnonId()
+  const identity: StoredIdentity = {
+    anonId,
+    name: existing?.name ?? '',
+    avatar: isStoredAvatar(avatar) ? avatar : undefined,
+  }
   writeStorage(identity)
   return identity
 }

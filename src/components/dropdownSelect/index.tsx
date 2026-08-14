@@ -1,7 +1,6 @@
 import { Id } from "@convex/_generated/dataModel";
 import { faCaretDown, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Image from "next/image";
 import { useState, useRef, useEffect, useMemo } from "react";
 
 interface DropdownSelectProps {
@@ -73,7 +72,8 @@ export default function DropdownSelect(props: DropdownSelectProps) {
         >
           {selected ? (
             <div className="flex truncate text-ellipsis items-center relative">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 width={14}
                 height={14}
                 className="w-5 h-5 me-2 rounded-full"
@@ -117,7 +117,8 @@ export default function DropdownSelect(props: DropdownSelectProps) {
                     : "hover:bg-gray-100 dark:hover:bg-gray-600"
                 } flex items-center px-4 py-2 dark:hover:text-white`}
               >
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   width={14}
                   height={14}
                   className="w-6 h-6 me-2 rounded-full"

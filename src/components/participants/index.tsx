@@ -1,5 +1,4 @@
 import { Doc } from '@convex/_generated/dataModel'
-import Image from 'next/image'
 
 import { PARTICIPANT_IMG_SIZE } from '../../helpers/constants'
 
@@ -24,7 +23,8 @@ export default function Participants(props: ParticipantsProps) {
           className={`hover:scale-125 transition-transform flex items-center shadow rounded-full p-0 -mr-2 z-1 ${sizeClass}`}
           key={user?._id}
         >
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             className="rounded-full max-h-full h-full"
             alt={user?.name || ''}
             title={user?.name || ''}

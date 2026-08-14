@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import useRetro from "@/helpers/hooks/useRetro";
 import { Id } from "@convex/_generated/dataModel";
-import { useUser } from "@clerk/nextjs";
 import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
+import { useIdentity } from "@/contexts/IdentityProvider";
 
 interface JoinRetroProps {
   retroId: Id<"retros">;
@@ -12,18 +12,17 @@ interface JoinRetroProps {
 const useJoinRetro = (props: JoinRetroProps) => {
   const { retroId } = props;
   const [joined, setJoined] = useState(false);
-  const { user, isSignedIn } = useUser();
-  const { users, retro } = useRetro({ retroId });
+  const { userId, anonId } = useIdentity();
+  const { users, retro, me } = useRetro({ retroId });
   const Join = useMutation(api.users_retro.join);
 
-  const me = users?.find((u) => u?.tokenIdentifier === user?.id);
-
   useEffect(() => {
-    if (isSignedIn && retro && users && !me) {
-      Join({ retroId, userId: user.id });
+    // Join once we have an identity (userId) and we're not already a member.
+    if (retro && users && userId && anonId && !me && !joined) {
+      Join({ retroId, userId: anonId });
       setJoined(true);
     }
-  }, [me, user, retroId, Join, retro, isSignedIn, users]);
+  }, [me, userId, anonId, retroId, Join, retro, users, joined]);
 
   return joined;
 };

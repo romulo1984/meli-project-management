@@ -1,6 +1,6 @@
 import { query, mutation } from './_generated/server'
 import { v } from 'convex/values'
-import { asyncMap } from './lib/relationships'
+import { asyncMap, toPublicUser } from './lib/relationships'
 import { Doc } from './_generated/dataModel'
 
 const unknownUser = {
@@ -20,14 +20,16 @@ export const get = query({
       .withIndex('by_retro_id', q => q.eq('retroId', args.id))
       .collect()
 
-    const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
+    const owner = retro
+      ? toPublicUser(await ctx.db.get(retro?.ownerId))
+      : unknownUser
 
     return {
       ...retro,
       owner,
       notes,
-      users: await asyncMap(usersRetro, user => {
-        return ctx.db.get(user.userId)
+      users: await asyncMap(usersRetro, async user => {
+        return toPublicUser(await ctx.db.get(user.userId))
       }),
     }
   },
@@ -56,13 +58,15 @@ export const myRetros = query({
           .collect()
       }
 
-      const owner = retro ? await ctx.db.get(retro?.ownerId) : unknownUser
+      const owner = retro
+        ? toPublicUser(await ctx.db.get(retro?.ownerId))
+        : unknownUser
 
       return {
         ...retro,
         owner,
-        users: await asyncMap(users, user => {
-          return ctx.db.get(user.userId)
+        users: await asyncMap(users, async user => {
+          return toPublicUser(await ctx.db.get(user.userId))
         }),
       }
     })

@@ -19,28 +19,25 @@ const linkClass =
   'text-slate-600 hover:text-slate-400 transition-colors'
 
 function Brand() {
-  // On hover: a subtle staggered "wave" lift of each segment, over a soft
-  // animated gradient glow that fades in behind the wordmark.
+  // On hover the color of the font itself animates: the letters turn
+  // transparent to reveal a gradient clipped to the text, which sweeps
+  // across the wordmark. No background — just the font color moving.
   return (
     <h1 className="text-2xl md:text-3xl font-bold">
       <a
         href="/"
-        className="group relative -mx-2 inline-flex items-baseline rounded-lg px-2 py-0.5"
+        className="group inline-block bg-gradient-to-r from-indigo-500 via-pink-500 to-indigo-500 bg-[length:200%_auto] bg-clip-text hover:animate-[logoGradient_2.5s_linear_infinite]"
       >
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-100 via-pink-100 to-indigo-100 bg-[length:200%_100%] opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:animate-[logoGradient_2.5s_linear_infinite]"
-        />
-        <span className="relative inline-block text-slate-400 transition-transform duration-300 ease-out group-hover:-translate-y-1">
+        <span className="text-slate-400 transition-colors duration-300 group-hover:text-transparent">
           /
         </span>
-        <span className="relative inline-block text-slate-600 transition-transform duration-300 ease-out [transition-delay:40ms] group-hover:-translate-y-1">
+        <span className="text-slate-600 transition-colors duration-300 group-hover:text-transparent">
           retro
         </span>
-        <span className="relative inline-block text-pink-400 transition-transform duration-300 ease-out [transition-delay:80ms] group-hover:-translate-y-1">
+        <span className="text-pink-400 transition-colors duration-300 group-hover:text-transparent">
           spec
         </span>
-        <span className="relative inline-block text-indigo-400 transition-transform duration-300 ease-out [transition-delay:120ms] group-hover:-translate-y-1">
+        <span className="text-indigo-400 transition-colors duration-300 group-hover:text-transparent">
           tool
         </span>
       </a>

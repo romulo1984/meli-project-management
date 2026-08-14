@@ -146,3 +146,88 @@ export const updateStatus = mutation({
     }
   },
 })
+
+// --- Highlight mode -------------------------------------------------------
+//
+// Only ONE participant may drive highlighting at a time. Control is a lock
+// stored on the retro document and enforced SERVER-SIDE against persisted
+// state — the client never gets to assert "I'm the controller" (CWE-639 /
+// CWE-862 / CWE-841). Convex mutations run in a serializable transaction, so
+// each read-check-write below is atomic: concurrent claims conflict on the
+// same retro document and only one can win (race-safe, no extra locking).
+
+// Acquire the highlight-control lock. Succeeds only when no one holds it, or
+// when the caller already holds it (idempotent re-claim). Returns whether the
+// caller controls highlighting after the call.
+export const claimHighlightControl = mutation({
+  args: { id: v.id('retros'), userId: v.id('users') },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+    if (!retro) return false
+
+    const controllerId = retro.highlightControllerId
+    // Someone else is in control → refuse (do not steal the lock).
+    if (controllerId && controllerId !== args.userId) {
+      return false
+    }
+
+    await ctx.db.patch(retro._id, { highlightControllerId: args.userId })
+    return true
+  },
+})
+
+// Release the highlight-control lock and clear the highlight. Only the current
+// controller may release it (checked against stored state, not client claim).
+export const releaseHighlightControl = mutation({
+  args: { id: v.id('retros'), userId: v.id('users') },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+    if (!retro) return false
+
+    if (retro.highlightControllerId !== args.userId) {
+      return false
+    }
+
+    await ctx.db.patch(retro._id, {
+      highlightControllerId: undefined,
+      highlightedNoteId: undefined,
+    })
+    return true
+  },
+})
+
+// Set (or clear, when `noteId` is omitted) the highlighted card. Only the
+// current controller may do this, and a provided note must belong to THIS
+// retro — both verified against the database, never trusting the caller.
+export const setHighlightedNote = mutation({
+  args: {
+    id: v.id('retros'),
+    userId: v.id('users'),
+    noteId: v.optional(v.id('notes')),
+  },
+  handler: async (ctx, args) => {
+    const retro = await ctx.db.get(args.id)
+    if (!retro) return false
+
+    // Authorization: caller must be the current controller.
+    if (retro.highlightControllerId !== args.userId) {
+      return false
+    }
+
+    // Clearing the highlight is always allowed for the controller.
+    if (!args.noteId) {
+      await ctx.db.patch(retro._id, { highlightedNoteId: undefined })
+      return true
+    }
+
+    // Validate the note exists and belongs to this retro (prevents pointing the
+    // shared highlight at a card from another board).
+    const note = await ctx.db.get(args.noteId)
+    if (!note || note.retroId !== retro._id) {
+      return false
+    }
+
+    await ctx.db.patch(retro._id, { highlightedNoteId: args.noteId })
+    return true
+  },
+})

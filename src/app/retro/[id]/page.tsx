@@ -1,4 +1,5 @@
 'use client'
+import EditColumnsModal from '@/components/edit-columns-modal'
 import InlineEditName from '@/components/inline-edit-name'
 import Loading from '@/components/loading'
 import NotLoggedAlert from '@/components/not-logged-alert'
@@ -71,6 +72,7 @@ export default function Retro(props: RetroProps) {
     good: false,
     action: false,
   })
+  const [isEditColumnsOpen, setEditColumnsOpen] = useState(false)
   const {
     isLoading,
     retro,
@@ -110,6 +112,12 @@ export default function Retro(props: RetroProps) {
     items: notes?.filter(n => n.pipeline === 'bad').map(n => n.body) || [],
   })
   const [selectedModel, setModel] = useState('claude-3-5-sonnet')
+
+  // Column labels are owner-editable; fall back to the defaults when unset/empty.
+  const goodLabel = retro?.goodLabel || 'Good'
+  const badLabel = retro?.badLabel || 'Bad'
+  const actionLabel = retro?.actionLabel || 'Actions'
+  const canEditLabels = retro?.ownerId === me?._id
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
@@ -211,8 +219,9 @@ export default function Retro(props: RetroProps) {
     }
   }
 
-  // Rows for the gear settings menu. Add a new setting by appending one object
-  // here — SettingsMenu renders each as a labelled on/off toggle.
+  // Rows for the gear settings menu. "Hide notes" is a toggle; "Edit columns"
+  // is an owner-only action that opens the label editor. Add a new setting by
+  // appending one object here — SettingsMenu renders toggles and actions alike.
   const settingsMenuItems: SettingsMenuItem[] = [
     {
       key: settings.notesShowingStatus.key,
@@ -231,6 +240,15 @@ export default function Retro(props: RetroProps) {
       onToggle: mergeMode ? exitMergeMode : enterMergeMode,
     },
   ]
+
+  if (canEditLabels) {
+    settingsMenuItems.push({
+      key: 'edit_columns',
+      label: 'Edit columns…',
+      description: 'Rename the Good / Bad / Actions columns',
+      onSelect: () => setEditColumnsOpen(true),
+    })
+  }
 
   // const showGenerateActionItemsButton =
   //   parsedNotes.bad.length > 0 &&
@@ -276,7 +294,7 @@ export default function Retro(props: RetroProps) {
             <div className="grid md:grid-cols-3 gap-6">
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <h3 className="text-lg text-zinc-500 mb-4">Good</h3>
+                  <p className="text-lg text-zinc-500 mb-4">{goodLabel}</p>
                   <p className="text-zinc-400">{parsedNotes.good?.length}</p>
                 </div>
                 {hasName && (
@@ -315,7 +333,7 @@ export default function Retro(props: RetroProps) {
               </div>
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <h3 className="text-lg text-zinc-500 mb-4">Bad</h3>
+                  <p className="text-lg text-zinc-500 mb-4">{badLabel}</p>
                   <p className="text-zinc-400">{parsedNotes.bad?.length}</p>
                 </div>
                 {hasName && (
@@ -354,15 +372,15 @@ export default function Retro(props: RetroProps) {
               </div>
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <h3 className="text-lg text-zinc-500 mb-4 flex items-center gap-2">
-                    <p>Actions</p>
+                  <div className="text-lg text-zinc-500 mb-4 flex items-center gap-2 w-full">
+                    <span>{actionLabel}</span>
                     {isGenerating && (
                       <Sparkles
                         className="mr-2 h-4 w-4 text-violet-800 generating-action-items-intermittent"
                         strokeWidth="1"
                       />
                     )}
-                  </h3>
+                  </div>
                   <p className="text-zinc-400">{parsedNotes.action?.length}</p>
                 </div>
                 {hasName && (
@@ -433,6 +451,16 @@ export default function Retro(props: RetroProps) {
                 )}
               </div>
             </div>
+            {canEditLabels && (
+              <EditColumnsModal
+                retroId={retro?._id}
+                open={isEditColumnsOpen}
+                onOpenChange={setEditColumnsOpen}
+                goodLabel={goodLabel}
+                badLabel={badLabel}
+                actionLabel={actionLabel}
+              />
+            )}
             {mergeMode && (
               <MergeModeBar
                 count={selectedNotes.length}

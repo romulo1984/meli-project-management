@@ -1,6 +1,7 @@
 'use client'
-import { faGear } from '@fortawesome/free-solid-svg-icons'
+import { faChevronRight, faGear } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useState } from 'react'
 import {
   Popover,
   PopoverContent,
@@ -9,22 +10,67 @@ import {
 import { cn } from '@/lib/utils'
 
 /**
- * A single toggle row in the settings menu.
+ * The settings menu renders a list of rows inside a gear-triggered popover.
+ *
+ * A row is one of two shapes — a clean superset:
+ *   - a TOGGLE row (`active` + `onToggle`) shown as an on/off switch, or
+ *   - an ACTION row (`onSelect`) shown as a clickable row with a chevron
+ *     affordance that runs the callback and closes the popover.
  *
  * The API is intentionally minimal and self-contained so new settings can be
  * added by the caller with a single object literal — no changes to this file.
  */
-export interface SettingsMenuItem {
+interface SettingsMenuItemBase {
   key: string
   label: string
   description?: string
-  active: boolean
   disabled?: boolean
+}
+
+/** A setting that flips on/off. Renders and behaves like the original row. */
+export interface SettingsMenuToggleItem extends SettingsMenuItemBase {
+  active: boolean
   onToggle: () => void
+}
+
+/** A one-shot action: runs `onSelect`, then closes the popover. */
+export interface SettingsMenuActionItem extends SettingsMenuItemBase {
+  onSelect: () => void
+}
+
+export type SettingsMenuItem = SettingsMenuToggleItem | SettingsMenuActionItem
+
+// Action rows are the ones that expose `onSelect`; everything else is a toggle.
+function isActionItem(item: SettingsMenuItem): item is SettingsMenuActionItem {
+  return 'onSelect' in item
 }
 
 interface SettingsMenuProps {
   items: SettingsMenuItem[]
+}
+
+// Shared row shell so toggle and action rows stay visually in sync.
+const rowClassName = (disabled?: boolean) =>
+  cn(
+    'flex items-center justify-between gap-3 rounded-md px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
+    disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-zinc-50',
+  )
+
+function RowLabel({
+  label,
+  description,
+}: {
+  label: string
+  description?: string
+}) {
+  return (
+    <span className="flex flex-col">
+      <span className="text-sm font-medium text-zinc-700">{label}</span>
+      {description && (
+        <span className="text-xs text-zinc-400">{description}</span>
+      )}
+    </span>
+  )
 }
 
 // Small on/off switch styled with the app's zinc/indigo palette. Presentational
@@ -49,8 +95,12 @@ function Switch({ active }: { active: boolean }) {
 }
 
 export default function SettingsMenu({ items }: SettingsMenuProps) {
+  // Controlled so action rows can close the popover on select; toggle rows
+  // leave it open, exactly as before.
+  const [open, setOpen] = useState(false)
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -69,35 +119,42 @@ export default function SettingsMenu({ items }: SettingsMenuProps) {
           <p className="text-xs text-zinc-400">Board preferences</p>
         </div>
         <div className="flex flex-col p-1.5">
-          {items.map(item => (
-            <button
-              key={item.key}
-              type="button"
-              role="switch"
-              aria-checked={item.active}
-              aria-label={item.label}
-              disabled={item.disabled}
-              onClick={item.onToggle}
-              className={cn(
-                'flex items-center justify-between gap-3 rounded-md px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
-                item.disabled
-                  ? 'cursor-not-allowed opacity-50'
-                  : 'hover:bg-zinc-50',
-              )}
-            >
-              <span className="flex flex-col">
-                <span className="text-sm font-medium text-zinc-700">
-                  {item.label}
-                </span>
-                {item.description && (
-                  <span className="text-xs text-zinc-400">
-                    {item.description}
-                  </span>
-                )}
-              </span>
-              <Switch active={item.active} />
-            </button>
-          ))}
+          {items.map(item =>
+            isActionItem(item) ? (
+              <button
+                key={item.key}
+                type="button"
+                aria-label={item.label}
+                disabled={item.disabled}
+                onClick={() => {
+                  item.onSelect()
+                  setOpen(false)
+                }}
+                className={rowClassName(item.disabled)}
+              >
+                <RowLabel label={item.label} description={item.description} />
+                <FontAwesomeIcon
+                  icon={faChevronRight}
+                  aria-hidden="true"
+                  className="shrink-0 text-xs text-zinc-300"
+                />
+              </button>
+            ) : (
+              <button
+                key={item.key}
+                type="button"
+                role="switch"
+                aria-checked={item.active}
+                aria-label={item.label}
+                disabled={item.disabled}
+                onClick={item.onToggle}
+                className={rowClassName(item.disabled)}
+              >
+                <RowLabel label={item.label} description={item.description} />
+                <Switch active={item.active} />
+              </button>
+            ),
+          )}
         </div>
       </PopoverContent>
     </Popover>

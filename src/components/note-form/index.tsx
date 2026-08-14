@@ -1,7 +1,6 @@
 import CapitalizeFirstLetter from "@/helpers/commons";
 import "./styles.scss";
 import useVoiceToText from "@/helpers/voiceToText";
-import { useEffect } from "react";
 import { MentionsInput, Mention } from "react-mentions";
 import { Doc } from "@convex/_generated/dataModel";
 import { Check } from "lucide-react";
@@ -23,23 +22,33 @@ interface NoteFormProps {
 export default function NoteForm(props: NoteFormProps) {
   const { saveHandler, setNewNote, toggleOpened, newNote, opened, users } =
     props;
-  const { recognizing, text, startRecognition } = useVoiceToText();
+  const { recognizing, startRecognition, stopRecognition } = useVoiceToText(
+    (spokenText) => {
+      setNewNote?.({ ...newNote, body: CapitalizeFirstLetter(spokenText) });
+    }
+  );
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    stopRecognition();
     saveHandler(e);
   };
 
-  const transcript = () => {
+  // Toggle dictation: start fresh (clearing the field) or stop if listening.
+  const toggleDictation = () => {
+    if (recognizing) {
+      stopRecognition();
+      return;
+    }
     setNewNote?.({ ...newNote, body: "" });
     startRecognition();
   };
 
-  useEffect(() => {
-    if (text !== "") {
-      setNewNote?.({ ...newNote, body: CapitalizeFirstLetter(text) });
-    }
-  }, [text]);
+  // Closing the form must also cancel any in-flight dictation.
+  const handleClose = () => {
+    stopRecognition();
+    toggleOpened?.();
+  };
 
   const renderSuggestion = (
     suggestion: any,
@@ -119,7 +128,7 @@ export default function NoteForm(props: NoteFormProps) {
               </label>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={toggleOpened}
+                  onClick={handleClose}
                   type="button"
                   title="Cancel"
                   className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 transition-colors hover:bg-zinc-200"
@@ -133,15 +142,19 @@ export default function NoteForm(props: NoteFormProps) {
                   </svg>
                 </button>
                 <button
-                  disabled={recognizing}
-                  onClick={transcript}
+                  onClick={toggleDictation}
                   type="button"
-                  title="Dictate"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 transition-colors hover:bg-zinc-200 disabled:opacity-50"
+                  title={recognizing ? "Stop listening" : "Dictate"}
+                  aria-pressed={recognizing}
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                    recognizing
+                      ? "bg-red-50 text-red-600 hover:bg-red-100"
+                      : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+                  }`}
                 >
                   <svg
                     className={`h-4 w-4 fill-current ${
-                      recognizing ? "selected-svg text-indigo-600" : ""
+                      recognizing ? "animate-pulse" : ""
                     }`}
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 384 512"

@@ -286,6 +286,7 @@ export default function Retro(props: RetroProps) {
     {
       key: settings.notesShowingStatus.key,
       label: settings.notesShowingStatus.label,
+      description: 'Blur every note until you reveal them',
       active: settings.notesShowingStatus.value === 'hidden',
       disabled: !hasName,
       onToggle: () => {
@@ -298,7 +299,7 @@ export default function Retro(props: RetroProps) {
       label: 'Highlight mode',
       description: isControlledByOther
         ? 'In use by another participant'
-        : undefined,
+        : 'Point everyone to the card you hover',
       active: isController,
       disabled: !hasName || !me || isControlledByOther,
       onToggle: toggle,

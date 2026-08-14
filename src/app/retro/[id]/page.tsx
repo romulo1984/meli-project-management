@@ -1,6 +1,6 @@
 'use client'
 import EditColumnsModal from '@/components/edit-columns-modal'
-import InlineEditName from '@/components/inline-edit-name'
+import RetroNameModal from '@/components/retro-name-modal'
 import Loading from '@/components/loading'
 import NotLoggedAlert from '@/components/not-logged-alert'
 import Note from '@/components/note'
@@ -18,7 +18,7 @@ import { useIdentity } from '@/contexts/IdentityProvider'
 import { api } from '@convex/_generated/api'
 import { Doc, Id } from '@convex/_generated/dataModel'
 import { Button } from '@/components/ui/button'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Pencil } from 'lucide-react'
 import MergeModeBar from '@/components/merge-mode-bar'
 import {
   DndContext,
@@ -74,6 +74,7 @@ export default function Retro(props: RetroProps) {
     action: false,
   })
   const [isEditColumnsOpen, setEditColumnsOpen] = useState(false)
+  const [isNameModalOpen, setNameModalOpen] = useState(false)
   const {
     isLoading,
     retro,
@@ -136,7 +137,7 @@ export default function Retro(props: RetroProps) {
   const goodLabel = retro?.goodLabel || 'Good'
   const badLabel = retro?.badLabel || 'Bad'
   const actionLabel = retro?.actionLabel || 'Actions'
-  const canEditLabels = retro?.ownerId === me?._id
+  const isOwner = retro?.ownerId === me?._id
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     if (retro && me) {
@@ -238,9 +239,8 @@ export default function Retro(props: RetroProps) {
     }
   }
 
-  // Rows for the gear settings menu. "Hide notes" is a toggle; "Edit columns"
-  // is an owner-only action that opens the label editor. Add a new setting by
-  // appending one object here — SettingsMenu renders toggles and actions alike.
+  // Rows for the gear settings menu (all toggles). Add a new setting by
+  // appending one object here.
   const settingsMenuItems: SettingsMenuItem[] = [
     {
       key: settings.notesShowingStatus.key,
@@ -270,15 +270,6 @@ export default function Retro(props: RetroProps) {
     },
   ]
 
-  if (canEditLabels) {
-    settingsMenuItems.push({
-      key: 'edit_columns',
-      label: 'Edit columns…',
-      description: 'Rename the Good / Bad / Actions columns',
-      onSelect: () => setEditColumnsOpen(true),
-    })
-  }
-
   // const showGenerateActionItemsButton =
   //   parsedNotes.bad.length > 0 &&
   //   parsedNotes.action.length === 0 &&
@@ -297,11 +288,22 @@ export default function Retro(props: RetroProps) {
           <>
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-6">
               <div className="flex flex-col md:w-1/2">
-                <InlineEditName
-                  disabled={retro?.ownerId !== me?._id}
-                  retroId={retro?._id}
-                  value={retro?.name}
-                />
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl text-zinc-600 truncate">
+                    {retro?.name}
+                  </h2>
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => setNameModalOpen(true)}
+                      title="Rename retro"
+                      aria-label="Rename retro"
+                      className="shrink-0 text-zinc-300 hover:text-indigo-500 transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-zinc-400">
                   Created in {formatDate(retro?._creationTime)}
                 </p>
@@ -323,7 +325,20 @@ export default function Retro(props: RetroProps) {
             <div className="grid md:grid-cols-3 gap-6">
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <p className="text-lg text-zinc-500 mb-4">{goodLabel}</p>
+                  <div className="mb-4 flex items-center gap-1.5">
+                    <p className="text-lg text-zinc-500">{goodLabel}</p>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => setEditColumnsOpen(true)}
+                        title="Rename columns"
+                        aria-label="Rename columns"
+                        className="text-zinc-300 hover:text-indigo-500 transition-colors"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                   <p className="text-zinc-400">{parsedNotes.good?.length}</p>
                 </div>
                 {hasName && (
@@ -365,7 +380,20 @@ export default function Retro(props: RetroProps) {
               </div>
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <p className="text-lg text-zinc-500 mb-4">{badLabel}</p>
+                  <div className="mb-4 flex items-center gap-1.5">
+                    <p className="text-lg text-zinc-500">{badLabel}</p>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => setEditColumnsOpen(true)}
+                        title="Rename columns"
+                        aria-label="Rename columns"
+                        className="text-zinc-300 hover:text-indigo-500 transition-colors"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
                   <p className="text-zinc-400">{parsedNotes.bad?.length}</p>
                 </div>
                 {hasName && (
@@ -407,8 +435,19 @@ export default function Retro(props: RetroProps) {
               </div>
               <div className="w-full bg-zinc-100 rounded-lg p-4">
                 <div className="flex justify-between">
-                  <div className="text-lg text-zinc-500 mb-4 flex items-center gap-2 w-full">
+                  <div className="text-lg text-zinc-500 mb-4 flex items-center gap-1.5 w-full">
                     <span>{actionLabel}</span>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => setEditColumnsOpen(true)}
+                        title="Rename columns"
+                        aria-label="Rename columns"
+                        className="text-zinc-300 hover:text-indigo-500 transition-colors"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                     {isGenerating && (
                       <Sparkles
                         className="mr-2 h-4 w-4 text-violet-800 generating-action-items-intermittent"
@@ -489,15 +528,23 @@ export default function Retro(props: RetroProps) {
                 )}
               </div>
             </div>
-            {canEditLabels && (
-              <EditColumnsModal
-                retroId={retro?._id}
-                open={isEditColumnsOpen}
-                onOpenChange={setEditColumnsOpen}
-                goodLabel={goodLabel}
-                badLabel={badLabel}
-                actionLabel={actionLabel}
-              />
+            {isOwner && (
+              <>
+                <RetroNameModal
+                  retroId={retro?._id}
+                  open={isNameModalOpen}
+                  onOpenChange={setNameModalOpen}
+                  name={retro?.name || ''}
+                />
+                <EditColumnsModal
+                  retroId={retro?._id}
+                  open={isEditColumnsOpen}
+                  onOpenChange={setEditColumnsOpen}
+                  goodLabel={goodLabel}
+                  badLabel={badLabel}
+                  actionLabel={actionLabel}
+                />
+              </>
             )}
             {mergeMode && (
               <MergeModeBar

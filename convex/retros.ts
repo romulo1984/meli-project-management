@@ -108,7 +108,11 @@ export const update = mutation({
     const retro = await ctx.db.get(args.id)
 
     if (retro) {
-      await ctx.db.patch(retro._id, { name: args.name })
+      // Trim + clamp defensively; ignore an empty name (keep the current one).
+      const name = args.name.trim().slice(0, 60)
+      if (name) {
+        await ctx.db.patch(retro._id, { name })
+      }
     }
   },
 })

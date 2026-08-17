@@ -379,7 +379,7 @@ export default function Retro(props: RetroProps) {
                   Created in {formatDate(retro?._creationTime)}
                 </p>
               </div>
-              <div className="flex gap-4 flex-row-reverse md:flex-row justify-between content-end items-center">
+              <div className="flex gap-4 flex-row-reverse md:flex-row md:justify-between content-end items-center">
                 <SettingsMenu items={settingsMenuItems} />
                 <Timer
                   timer={retro?.timer || 0}
@@ -389,7 +389,11 @@ export default function Retro(props: RetroProps) {
                   startTimer={startTimer}
                   resetTimer={resetTimer}
                 />
-                <Participants users={users} />
+                {/* On mobile, push the avatars to the left so the timer sits
+                    right next to settings. Desktop keeps the original spread. */}
+                <div className="mr-auto md:mr-0">
+                  <Participants users={users} />
+                </div>
               </div>
             </div>
             {!hasName && <NotLoggedAlert onAction={promptName} />}

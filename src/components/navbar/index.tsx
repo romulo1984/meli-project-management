@@ -4,7 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBell } from '@fortawesome/free-regular-svg-icons'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { FC } from 'react'
+import { FC, useEffect, useRef, useState } from 'react'
+import { Menu, X } from 'lucide-react'
 import { CLERK_AUTH_ENABLED } from '@/config/features'
 import { useIdentity } from '@/contexts/IdentityProvider'
 
@@ -64,49 +65,138 @@ function ChangelogBell() {
 /** Active navigation — anonymous local identity (no login). */
 function AnonymousNav() {
   const { ready, hasName, name, avatar, openRename, promptName } = useIdentity()
+  // Mobile-only collapsible menu. Desktop (md+) keeps the original inline row.
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const closeMenu = () => setMenuOpen(false)
+
+  // Close the mobile menu when clicking anywhere outside it.
+  useEffect(() => {
+    if (!menuOpen) return
+    const onPointerDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    return () => document.removeEventListener('mousedown', onPointerDown)
+  }, [menuOpen])
 
   return (
-    <div className="flex justify-end items-center gap-4 sm:gap-5">
-      <Link
-        href="/new"
-        className="rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
-      >
-        + New
-      </Link>
-      <Link className={`text-sm ${linkClass}`} href="/retros">
-        My Retros
-      </Link>
-      <ChangelogBell />
-      {ready &&
-        (hasName ? (
-          <button
-            type="button"
-            onClick={openRename}
-            title="Edit your name"
-            className="flex items-center gap-2 rounded-full border border-zinc-200/70 pl-1 pr-3 py-1 hover:bg-zinc-100 transition-colors"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={avatar}
-              alt={name}
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full object-cover object-center"
-            />
-            <span className="text-sm text-slate-600 max-w-[10rem] truncate">
-              {name}
-            </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={promptName}
-            className="text-sm rounded-full bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500 transition-colors"
-          >
-            Set your name
-          </button>
-        ))}
-    </div>
+    <>
+      {/* Desktop navigation — unchanged from the desktop design (md and up). */}
+      <div className="hidden md:flex justify-end items-center gap-4 sm:gap-5">
+        <Link
+          href="/new"
+          className="rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
+        >
+          + New
+        </Link>
+        <Link className={`text-sm ${linkClass}`} href="/retros">
+          My Retros
+        </Link>
+        <ChangelogBell />
+        {ready &&
+          (hasName ? (
+            <button
+              type="button"
+              onClick={openRename}
+              title="Edit your name"
+              className="flex items-center gap-2 rounded-full border border-zinc-200/70 pl-1 pr-3 py-1 hover:bg-zinc-100 transition-colors"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={avatar}
+                alt={name}
+                width={32}
+                height={32}
+                className="h-8 w-8 rounded-full object-cover object-center"
+              />
+              <span className="text-sm text-slate-600 max-w-[10rem] truncate">
+                {name}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={promptName}
+              className="text-sm rounded-full bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-500 transition-colors"
+            >
+              Set your name
+            </button>
+          ))}
+      </div>
+
+      {/* Mobile navigation — a hamburger that drops the same links down as a
+          full-width sheet under the (sticky) header. */}
+      <div ref={menuRef} className="md:hidden">
+        <button
+          type="button"
+          onClick={() => setMenuOpen(v => !v)}
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-zinc-100"
+        >
+          {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+
+        {menuOpen && (
+          <div className="absolute inset-x-0 top-full border-b border-zinc-100 bg-white shadow-lg">
+            <div className="container mx-auto max-w-screen-xl px-6 py-3 flex flex-col gap-1">
+              {ready &&
+                (hasName ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openRename()
+                      closeMenu()
+                    }}
+                    className="flex items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-zinc-100"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={avatar}
+                      alt={name}
+                      width={36}
+                      height={36}
+                      className="h-9 w-9 rounded-full object-cover object-center"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">
+                      {name}
+                    </span>
+                    <span className="text-xs text-zinc-400">Edit</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      promptName()
+                      closeMenu()
+                    }}
+                    className="rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-indigo-500"
+                  >
+                    Set your name
+                  </button>
+                ))}
+              <Link
+                href="/new"
+                onClick={closeMenu}
+                className="rounded-lg px-2 py-2.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50"
+              >
+                + New retro
+              </Link>
+              <Link
+                href="/retros"
+                onClick={closeMenu}
+                className="rounded-lg px-2 py-2.5 text-sm text-slate-600 transition-colors hover:bg-zinc-100"
+              >
+                My Retros
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 

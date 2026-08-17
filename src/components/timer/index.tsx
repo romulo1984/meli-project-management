@@ -1,5 +1,11 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface TimerProps {
   timer: number
@@ -52,6 +58,27 @@ export default function Timer (props: TimerProps) {
   const [customSeconds, setCustomSeconds] = useState('')
   const [customError, setCustomError] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
+
+  // On mobile the time options open in a modal instead of expanding inline
+  // (the inline row is cramped on a phone). Desktop keeps the inline UI.
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
+  // Prefill the custom fields with the current duration when the mobile modal
+  // opens, so the user edits from a sensible starting point.
+  useEffect(() => {
+    if (!isMobile || !showTimeOptions) return
+    const totalSeconds = Math.floor(timer / 1000)
+    setCustomMinutes(String(Math.floor(totalSeconds / 60)))
+    setCustomSeconds(String(totalSeconds % 60))
+    setCustomError(false)
+  }, [isMobile, showTimeOptions, timer])
 
   const handleShowTimeOptions = useCallback(() => {
     setShowTimeOptions((prev) => !prev)
@@ -137,7 +164,7 @@ export default function Timer (props: TimerProps) {
       </button>
 
       {showTimeOptions &&
-        <div className='flex items-center gap-3'>
+        <div className='hidden md:flex items-center gap-3'>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(45000)}>45s</button>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(60000)}>60s</button>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(120000)}>2min</button>
@@ -204,6 +231,77 @@ export default function Timer (props: TimerProps) {
         </button>
       }
       <audio ref={audioRef} src='/alarm.mp3' preload='auto' />
+
+      {/* Mobile: the time options open in a modal instead of the inline row. */}
+      <Dialog
+        open={isMobile && showTimeOptions}
+        onOpenChange={open => {
+          if (!open) {
+            setShowTimeOptions(false)
+            setShowCustom(false)
+          }
+        }}
+      >
+        <DialogContent className='sm:max-w-sm'>
+          <DialogHeader>
+            <DialogTitle className='text-lg text-zinc-700'>Set timer</DialogTitle>
+          </DialogHeader>
+          <div className='grid grid-cols-2 gap-2'>
+            {[
+              { label: '45s', ms: 45000 },
+              { label: '1 min', ms: 60000 },
+              { label: '2 min', ms: 120000 },
+              { label: '5 min', ms: 300000 },
+            ].map(({ label, ms }) => (
+              <button
+                key={ms}
+                type='button'
+                onClick={() => handleSetTimer(ms)}
+                className='rounded-lg bg-slate-100 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-200'
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <form
+            onSubmit={handleSetCustomTimer}
+            className='flex items-center gap-2 border-t border-zinc-100 pt-4'
+          >
+            <span className='text-sm text-zinc-500'>Custom</span>
+            <input
+              type='number'
+              inputMode='numeric'
+              min={0}
+              max={MAX_CUSTOM_MINUTES}
+              step={1}
+              aria-label='Minutes'
+              placeholder='mm'
+              value={customMinutes}
+              onChange={handleCustomFieldChange(setCustomMinutes)}
+              className={`w-14 rounded-lg border bg-white px-2 py-1.5 text-center outline-none ${customError ? 'border-red-400' : 'border-slate-300'}`}
+            />
+            <span className='text-slate-400'>:</span>
+            <input
+              type='number'
+              inputMode='numeric'
+              min={0}
+              max={59}
+              step={1}
+              aria-label='Seconds'
+              placeholder='ss'
+              value={customSeconds}
+              onChange={handleCustomFieldChange(setCustomSeconds)}
+              className={`w-14 rounded-lg border bg-white px-2 py-1.5 text-center outline-none ${customError ? 'border-red-400' : 'border-slate-300'}`}
+            />
+            <button
+              type='submit'
+              className='ml-auto rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500'
+            >
+              Set
+            </button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

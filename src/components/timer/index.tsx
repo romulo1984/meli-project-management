@@ -137,7 +137,7 @@ export default function Timer (props: TimerProps) {
       </button>
 
       {showTimeOptions &&
-        <div className='flex items-center gap-3'>
+        <div className='flex flex-wrap items-center gap-3'>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(45000)}>45s</button>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(60000)}>60s</button>
           <button className='bg-slate-200 px-2 rounded' onClick={() => handleSetTimer(120000)}>2min</button>
